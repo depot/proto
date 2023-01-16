@@ -1,0 +1,61 @@
+syntax = "proto3";
+package depot.core.v1;
+
+service NamespacesService {
+  // List all namespaces
+  rpc ListNamespaces(ListNamespacesRequest) returns (ListNamespacesResponse) {}
+
+  // Get a namespace
+  rpc GetNamespace(GetNamespaceRequest) returns (GetNamespaceResponse) {}
+
+  // Create a new namespace
+  rpc CreateNamespace(CreateNamespaceRequest) returns (CreateNamespaceResponse) {}
+
+  // Update a namespace
+  rpc UpdateNamespace(UpdateNamespaceRequest) returns (UpdateNamespaceResponse) {}
+
+  // Delete a namespace
+  rpc DeleteNamespace(DeleteNamespaceRequest) returns (DeleteNamespaceResponse) {}
+}
+
+message Namespace {
+  string id = 1;
+  string name = 2;
+}
+
+message ListNamespacesRequest {}
+
+message ListNamespacesResponse {
+  repeated Namespace namespaces = 1;
+}
+
+message GetNamespaceRequest {
+  string id = 1;
+}
+
+message GetNamespaceResponse {
+  Namespace namespace = 1;
+}
+
+message CreateNamespaceRequest {
+  string name = 1;
+}
+
+message CreateNamespaceResponse {
+  Namespace namespace = 1;
+}
+
+message UpdateNamespaceRequest {
+  string id = 1;
+  string name = 2;
+}
+
+message UpdateNamespaceResponse {
+  Namespace namespace = 1;
+}
+
+message DeleteNamespaceRequest {
+  string id = 1;
+}
+
+message DeleteNamespaceResponse {}
