@@ -21,6 +21,9 @@ service NamespacesService {
 message Namespace {
   string id = 1;
   string name = 2;
+  string organization_id = 3;
+  string region_id = 4;
+  int32 volume_size = 5;
 }
 
 message ListNamespacesRequest {}
@@ -39,6 +42,9 @@ message GetNamespaceResponse {
 
 message CreateNamespaceRequest {
   string name = 1;
+  string organization_id = 2;
+  string region_id = 3;
+  optional int32 volume_size = 4;
 }
 
 message CreateNamespaceResponse {
@@ -47,7 +53,9 @@ message CreateNamespaceResponse {
 
 message UpdateNamespaceRequest {
   string id = 1;
-  string name = 2;
+  optional string name = 2;
+  optional string region_id = 3;
+  optional int32 volume_size = 4;
 }
 
 message UpdateNamespaceResponse {
