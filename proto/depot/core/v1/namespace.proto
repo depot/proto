@@ -1,7 +1,9 @@
 syntax = "proto3";
 package depot.core.v1;
 
-service NamespacesService {
+import "google/protobuf/timestamp.proto";
+
+service NamespaceService {
   // List all namespaces
   rpc ListNamespaces(ListNamespacesRequest) returns (ListNamespacesResponse) {}
 
@@ -24,6 +26,7 @@ message Namespace {
   string organization_id = 3;
   string region_id = 4;
   int32 volume_size = 5;
+  google.protobuf.Timestamp created_at = 6;
 }
 
 message ListNamespacesRequest {}
