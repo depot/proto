@@ -1,9 +1,12 @@
 syntax = "proto3";
 package depot.buildkit.v1;
 
+import "google/protobuf/timestamp.proto";
+
 service BuildKitService {
   rpc GetEndpoint(GetEndpointRequest) returns (stream GetEndpointResponse);
   rpc ReportHealth(stream ReportHealthRequest) returns (ReportHealthResponse);
+  rpc ReportTimings(ReportTimingsRequest) returns (ReportTimingsResponse);
   rpc ReleaseEndpoint(ReleaseEndpointRequest) returns (ReleaseEndpointResponse);
 }
 
@@ -60,3 +63,21 @@ message ReportHealthRequest {
 }
 
 message ReportHealthResponse {}
+
+message ReportTimingsRequest {
+  string build_id = 1;
+  repeated Buildstep buildsteps = 2;
+}
+
+message ReportTimingsResponse {}
+
+message Buildstep {
+  string name = 1;
+  string digest = 2;
+  google.protobuf.Timestamp start_time = 3;
+  int64 duration = 4;
+  repeated string input_digests = 5;
+  int64 input_duration = 6;
+  bool cached = 7;
+  optional string error = 8;
+}
