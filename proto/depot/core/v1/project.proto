@@ -1,0 +1,77 @@
+syntax = "proto3";
+package depot.core.v1;
+
+import "google/protobuf/timestamp.proto";
+
+service ProjectService {
+  // List all projects
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {}
+
+  // Get a project
+  rpc GetProject(GetProjectRequest) returns (GetProjectResponse) {}
+
+  // Create a new project
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse) {}
+
+  // Update a project
+  rpc UpdateProject(UpdateProjectRequest) returns (UpdateProjectResponse) {}
+
+  // Delete a project
+  rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse) {}
+}
+
+message Project {
+  string project_id = 1;
+  string organization_id = 2;
+  string name = 3;
+  string region_id = 4;
+  google.protobuf.Timestamp created_at = 5;
+  CachePolicy cache_policy = 6;
+}
+
+message ListProjectsRequest {}
+
+message ListProjectsResponse {
+  repeated Project projects = 1;
+}
+
+message GetProjectRequest {
+  string project_id = 1;
+}
+
+message GetProjectResponse {
+  Project project = 1;
+}
+
+message CreateProjectRequest {
+  string name = 1;
+  string organization_id = 2;
+  string region_id = 3;
+  optional CachePolicy cache_policy = 4;
+}
+
+message CreateProjectResponse {
+  Project project = 1;
+}
+
+message UpdateProjectRequest {
+  string project_id = 1;
+  optional string name = 2;
+  optional string region_id = 3;
+  optional CachePolicy cache_policy = 4;
+}
+
+message UpdateProjectResponse {
+  Project project = 1;
+}
+
+message DeleteProjectRequest {
+  string project_id = 1;
+}
+
+message DeleteProjectResponse {}
+
+message CachePolicy {
+  int32 keep_bytes = 1;
+  int32 keep_days = 2;
+}
