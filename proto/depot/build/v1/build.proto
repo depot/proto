@@ -7,7 +7,7 @@ service BuildService {
 }
 
 message CreateBuildRequest {
-  string namespace_id = 1;
+  string project_id = 1;
 }
 
 message CreateBuildResponse {
