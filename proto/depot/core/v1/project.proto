@@ -18,6 +18,13 @@ service ProjectService {
 
   // Delete a project
   rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse) {}
+
+  // List project's OIDC trust relationships.
+  rpc ListTrustRelationships(ListTrustRelationshipsRequest) returns (ListTrustRelationshipsResponse) {}
+  // Add an OIDC trust relationship to a project.
+  rpc AddTrustRelationship(AddTrustRelationshipRequest) returns (AddTrustRelationshipResponse) {}
+  // Remove an OIDC trust relationship from a project.
+  rpc RemoveTrustRelationship(RemoveTrustRelationshipRequest) returns (RemoveTrustRelationshipResponse) {}
 }
 
 message Project {
@@ -74,4 +81,52 @@ message DeleteProjectResponse {}
 message CachePolicy {
   int32 keep_bytes = 1;
   int32 keep_days = 2;
+}
+
+message ListTrustRelationshipsRequest {
+  string project_id = 1;
+}
+
+message ListTrustRelationshipsResponse {
+  repeated TrustRelationship trust_relationships = 1;
+}
+
+message AddTrustRelationshipRequest {
+  string project_id = 1;
+  TrustRelationship trust_relationship = 2;
+}
+
+message AddTrustRelationshipResponse {}
+
+message RemoveTrustRelationshipRequest {
+  string project_id = 1;
+  TrustRelationship trust_relationship = 2;
+}
+
+message RemoveTrustRelationshipResponse {}
+
+message TrustRelationship {
+  oneof provider {
+    Github github = 1;
+    CircleCI circleci = 2;
+    Buildkite buildkite = 3;
+  }
+}
+
+message Github {
+  // The Github organization or user name
+  string repository_owner = 1;
+  string repository = 2;
+}
+
+message CircleCI {
+  // CircleCI organization UUID must be a valid UUID, not the friendly organization ID.
+  string organization_uuid = 1;
+  // CircleCI project UUID must be a valid UUID, not the friendly project ID
+  string project_uuid = 2;
+}
+
+message Buildkite {
+  string organization_slug = 1;
+  string pipeline_slug = 2;
 }
