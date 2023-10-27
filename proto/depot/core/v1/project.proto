@@ -19,12 +19,14 @@ service ProjectService {
   // Delete a project
   rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse) {}
 
-  // List project's OIDC trust relationships.
-  rpc ListTrustRelationships(ListTrustRelationshipsRequest) returns (ListTrustRelationshipsResponse) {}
-  // Add an OIDC trust relationship to a project.
-  rpc AddTrustRelationship(AddTrustRelationshipRequest) returns (AddTrustRelationshipResponse) {}
-  // Remove an OIDC trust relationship from a project.
-  rpc RemoveTrustRelationship(RemoveTrustRelationshipRequest) returns (RemoveTrustRelationshipResponse) {}
+  // List project's trust policies.
+  rpc ListTrustPolicies(ListTrustPoliciesRequest) returns (ListTrustPoliciesResponse) {}
+
+  // Add a trust policy to a project.
+  rpc AddTrustPolicy(AddTrustPolicyRequest) returns (AddTrustPolicyResponse) {}
+
+  // Remove a trust policy from a project.
+  rpc RemoveTrustPolicy(RemoveTrustPolicyRequest) returns (RemoveTrustPolicyResponse) {}
 }
 
 message Project {
@@ -83,57 +85,57 @@ message CachePolicy {
   int32 keep_days = 2;
 }
 
-message ListTrustRelationshipsRequest {
+message ListTrustPoliciesRequest {
   string project_id = 1;
 }
 
-message ListTrustRelationshipsResponse {
-  repeated TrustRelationship trust_relationships = 1;
+message ListTrustPoliciesResponse {
+  repeated TrustPolicy trust_policies = 1;
 }
 
-message AddTrustRelationshipRequest {
+message AddTrustPolicyRequest {
   string project_id = 1;
   oneof provider {
-    Buildkite buildkite = 2;
-    CircleCI circleci = 3;
-    Github github = 4;
+    BuildkiteOIDC buildkite = 2;
+    CircleCIOIDC circleci = 3;
+    GitHubOIDC github = 4;
   }
 }
 
-message AddTrustRelationshipResponse {
-  TrustRelationship trust_relationship = 1;
+message AddTrustPolicyResponse {
+  TrustPolicy trust_policy = 1;
 }
 
-message RemoveTrustRelationshipRequest {
+message RemoveTrustPolicyRequest {
   string project_id = 1;
-  string trust_relationship_id = 2;
+  string trust_policy_id = 2;
 }
 
-message RemoveTrustRelationshipResponse {}
+message RemoveTrustPolicyResponse {}
 
-message TrustRelationship {
-  string trust_relationship_id = 1;
+message TrustPolicy {
+  string trust_policy_id = 1;
   oneof provider {
-    Buildkite buildkite = 2;
-    CircleCI circleci = 3;
-    Github github = 4;
+    BuildkiteOIDC buildkite = 2;
+    CircleCIOIDC circleci = 3;
+    GitHubOIDC github = 4;
   }
 }
 
-message Github {
-  // The Github organization or user name
+message GitHubOIDC {
+  // The GitHub organization or user name
   string repository_owner = 1;
   string repository = 2;
 }
 
-message CircleCI {
+message CircleCIOIDC {
   // CircleCI organization UUID must be a valid UUID, not the friendly organization ID.
   string organization_uuid = 1;
   // CircleCI project UUID must be a valid UUID, not the friendly project ID
   string project_uuid = 2;
 }
 
-message Buildkite {
+message BuildkiteOIDC {
   string organization_slug = 1;
   string pipeline_slug = 2;
 }
