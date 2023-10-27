@@ -93,23 +93,30 @@ message ListTrustRelationshipsResponse {
 
 message AddTrustRelationshipRequest {
   string project_id = 1;
-  TrustRelationship trust_relationship = 2;
+  oneof provider {
+    Buildkite buildkite = 2;
+    CircleCI circleci = 3;
+    Github github = 4;
+  }
 }
 
-message AddTrustRelationshipResponse {}
+message AddTrustRelationshipResponse {
+  TrustRelationship trust_relationship = 1;
+}
 
 message RemoveTrustRelationshipRequest {
   string project_id = 1;
-  TrustRelationship trust_relationship = 2;
+  string trust_relationship_id = 2;
 }
 
 message RemoveTrustRelationshipResponse {}
 
 message TrustRelationship {
+  string trust_relationship_id = 1;
   oneof provider {
-    Github github = 1;
-    CircleCI circleci = 2;
-    Buildkite buildkite = 3;
+    Buildkite buildkite = 2;
+    CircleCI circleci = 3;
+    Github github = 4;
   }
 }
 
