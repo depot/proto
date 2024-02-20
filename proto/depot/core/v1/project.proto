@@ -81,7 +81,7 @@ message DeleteProjectRequest {
 message DeleteProjectResponse {}
 
 message CachePolicy {
-  int32 keep_bytes = 1;
+  int64 keep_bytes = 1;
   int32 keep_days = 2;
 }
 
