@@ -54,7 +54,7 @@ message GetProjectResponse {
 
 message CreateProjectRequest {
   string name = 1;
-  string organization_id = 2;
+  optional string organization_id = 2;
   string region_id = 3;
   optional CachePolicy cache_policy = 4;
 }
