@@ -27,6 +27,18 @@ service ProjectService {
 
   // Remove a trust policy from a project.
   rpc RemoveTrustPolicy(RemoveTrustPolicyRequest) returns (RemoveTrustPolicyResponse) {}
+
+  // List project's API tokens.
+  rpc ListTokens(ListTokensRequest) returns (ListTokensResponse) {}
+
+  // Create a project API token.
+  rpc CreateToken(CreateTokenRequest) returns (CreateTokenResponse) {}
+
+  // Create a project API token.
+  rpc UpdateToken(UpdateTokenRequest) returns (UpdateTokenResponse) {}
+
+  // Delete project API token.
+  rpc DeleteToken(DeleteTokenRequest) returns (DeleteTokenResponse) {}
 }
 
 message Project {
@@ -139,3 +151,39 @@ message TrustPolicy {
     string pipeline_slug = 2;
   }
 }
+
+message ListTokensRequest {
+  string project_id = 1;
+}
+
+message ListTokensResponse {
+  repeated Token tokens = 1;
+
+  message Token {
+    string token_id = 1;
+    string description = 2;
+  }
+}
+
+message CreateTokenRequest {
+  string project_id = 1;
+  string description = 2;
+}
+
+message CreateTokenResponse {
+  string token_id = 1;
+  string secret = 2;
+}
+
+message UpdateTokenRequest {
+  string token_id = 1;
+  string description = 2;
+}
+
+message UpdateTokenResponse {}
+
+message DeleteTokenRequest {
+  string token_id = 1;
+}
+
+message DeleteTokenResponse {}
