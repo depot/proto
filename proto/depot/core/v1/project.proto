@@ -19,6 +19,9 @@ service ProjectService {
   // Delete a project
   rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse) {}
 
+  // Reset a project will terminate all machines and delete all cached data.
+  rpc ResetProject(ResetProjectRequest) returns (ResetProjectResponse) {}
+
   // List project's trust policies.
   rpc ListTrustPolicies(ListTrustPoliciesRequest) returns (ListTrustPoliciesResponse) {}
 
@@ -94,6 +97,12 @@ message DeleteProjectRequest {
 }
 
 message DeleteProjectResponse {}
+
+message ResetProjectRequest {
+  string project_id = 1;
+}
+
+message ResetProjectResponse {}
 
 message CachePolicy {
   optional int64 keep_bytes = 1 [deprecated = true];
