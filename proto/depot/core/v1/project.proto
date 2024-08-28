@@ -96,8 +96,9 @@ message DeleteProjectRequest {
 message DeleteProjectResponse {}
 
 message CachePolicy {
-  int64 keep_bytes = 1;
+  reserved 1;
   int32 keep_days = 2;
+  int32 keep_gb = 3;
 }
 
 // Hardware represents the hardware configuration of a project.
