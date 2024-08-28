@@ -48,6 +48,7 @@ message Project {
   string region_id = 4;
   google.protobuf.Timestamp created_at = 5;
   CachePolicy cache_policy = 6;
+  Hardware hardware = 7;
 }
 
 message ListProjectsRequest {}
@@ -69,6 +70,7 @@ message CreateProjectRequest {
   optional string organization_id = 2;
   string region_id = 3;
   optional CachePolicy cache_policy = 4;
+  optional Hardware hardware = 5;
 }
 
 message CreateProjectResponse {
@@ -80,6 +82,7 @@ message UpdateProjectRequest {
   optional string name = 2;
   optional string region_id = 3;
   optional CachePolicy cache_policy = 4;
+  optional Hardware hardware = 5;
 }
 
 message UpdateProjectResponse {
@@ -95,6 +98,16 @@ message DeleteProjectResponse {}
 message CachePolicy {
   int64 keep_bytes = 1;
   int32 keep_days = 2;
+}
+
+// Hardware represents the hardware configuration of a project.
+enum Hardware {
+  // By default is 16 CPU and 32GB of memory.
+  HARDWARE_UNSPECIFIED = 0;
+  // 16 CPU and 32GB of memory.
+  HARDWARE_16X32 = 1;
+  // 4 CPU and 4GB of memory.
+  HARDWARE_4X4 = 2;
 }
 
 message ListTrustPoliciesRequest {
