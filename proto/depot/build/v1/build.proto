@@ -4,6 +4,8 @@ package depot.build.v1;
 service BuildService {
   rpc CreateBuild(CreateBuildRequest) returns (CreateBuildResponse);
   rpc FinishBuild(FinishBuildRequest) returns (FinishBuildResponse);
+  rpc ShareBuild(ShareBuildRequest) returns (ShareBuildResponse);
+  rpc StopSharingBuild(StopSharingBuildRequest) returns (StopSharingBuildResponse);
 }
 
 message CreateBuildRequest {
@@ -30,3 +32,17 @@ message FinishBuildRequest {
 }
 
 message FinishBuildResponse {}
+
+message ShareBuildRequest {
+  string build_id = 1;
+}
+
+message ShareBuildResponse {
+  string share_url = 1;
+}
+
+message StopSharingBuildRequest {
+  string build_id = 1;
+}
+
+message StopSharingBuildResponse {}
