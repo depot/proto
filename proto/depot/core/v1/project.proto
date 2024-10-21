@@ -42,12 +42,6 @@ service ProjectService {
 
   // Delete project API token.
   rpc DeleteToken(DeleteTokenRequest) returns (DeleteTokenResponse) {}
-
-  // Share a URL to a build with users outside of your organization
-  rpc ShareBuild(ShareBuildRequest) returns (ShareBuildResponse);
-
-  // Stop sharing a build
-  rpc StopSharingBuild(StopSharingBuildRequest) returns (StopSharingBuildResponse);
 }
 
 message Project {
@@ -220,17 +214,3 @@ message DeleteTokenRequest {
 }
 
 message DeleteTokenResponse {}
-
-message ShareBuildRequest {
-  string build_id = 1;
-}
-
-message ShareBuildResponse {
-  string share_url = 1;
-}
-
-message StopSharingBuildRequest {
-  string build_id = 1;
-}
-
-message StopSharingBuildResponse {}
