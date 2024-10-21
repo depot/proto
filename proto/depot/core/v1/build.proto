@@ -1,0 +1,24 @@
+syntax = "proto3";
+package depot.core.v1;
+
+service BuildService {
+  // Share a URL to a build with users outside of your organization
+  rpc ShareBuild(ShareBuildRequest) returns (ShareBuildResponse);
+
+  // Stop sharing a build
+  rpc StopSharingBuild(StopSharingBuildRequest) returns (StopSharingBuildResponse);
+}
+
+message ShareBuildRequest {
+  string build_id = 1;
+}
+
+message ShareBuildResponse {
+  string share_url = 1;
+}
+
+message StopSharingBuildRequest {
+  string build_id = 1;
+}
+
+message StopSharingBuildResponse {}
