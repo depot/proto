@@ -122,6 +122,8 @@ enum Hardware {
   HARDWARE_8X8 = 3;
   // 8 CPU and 16GB of memory.
   HARDWARE_8X16 = 4;
+  // 32 CPU and 64GB of memory.
+  HARDWARE_32X64 = 5;
 }
 
 message ListTrustPoliciesRequest {
