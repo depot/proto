@@ -112,17 +112,17 @@ message CachePolicy {
 
 // Hardware represents the hardware configuration of a project.
 enum Hardware {
-  // By default is 16 CPU and 32GB of memory.
+  // By default is 16 CPU and 32GB of memory. Supported by AWS builders.
   HARDWARE_UNSPECIFIED = 0;
-  // 16 CPU and 32GB of memory.
+  // 16 CPU and 32GB of memory. Supported by AWS builders.
   HARDWARE_16X32 = 1;
   // 4 CPU and 4GB of memory.
   HARDWARE_4X4 = 2;
   // 8 CPU and 8GB of memory.
   HARDWARE_8X8 = 3;
-  // 8 CPU and 16GB of memory.
+  // 8 CPU and 16GB of memory. Supported by AWS builders.
   HARDWARE_8X16 = 4;
-  // 32 CPU and 64GB of memory.
+  // 32 CPU and 64GB of memory. Supported by AWS builders.
   HARDWARE_32X64 = 5;
 }
 
