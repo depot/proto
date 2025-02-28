@@ -1,6 +1,7 @@
 syntax = "proto3";
 package depot.core.v1;
 
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 service ProjectService {
@@ -74,6 +75,7 @@ message CreateProjectRequest {
   string region_id = 3;
   optional CachePolicy cache_policy = 4;
   optional Hardware hardware = 5;
+  optional NullableInt32 max_build_duration_minutes = 6;
 }
 
 message CreateProjectResponse {
@@ -86,6 +88,7 @@ message UpdateProjectRequest {
   optional string region_id = 3;
   optional CachePolicy cache_policy = 4;
   optional Hardware hardware = 5;
+  optional NullableInt32 max_build_duration_minutes = 6;
 }
 
 message UpdateProjectResponse {
@@ -218,3 +221,10 @@ message DeleteTokenRequest {
 }
 
 message DeleteTokenResponse {}
+
+message NullableInt32 {
+  oneof kind {
+    google.protobuf.NullValue null = 1;
+    int32 value = 2;
+  }
+}
