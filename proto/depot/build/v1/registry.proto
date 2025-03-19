@@ -15,8 +15,8 @@ message ListImagesRequest {
 }
 
 message Image {
-  optional string tag = 1;
-  optional string digest = 2;
+  string tag = 1;
+  string digest = 2;
 }
 
 message ListImagesResponse {
