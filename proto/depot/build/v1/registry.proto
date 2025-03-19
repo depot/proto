@@ -1,0 +1,33 @@
+syntax = "proto3";
+package depot.build.v1;
+
+service RegistryService {
+  rpc ListImages(ListImagesRequest) returns (ListImagesResponse);
+  rpc DeleteImage(DeleteImageRequest) returns (DeleteImageResponse);
+}
+
+message ListImagesRequest {
+  string project_id = 1;
+  // The maximum number of results to return per page
+  optional int32 page_size = 2;
+  // The page token indicating which page of results to return
+  optional string page_token = 3;
+}
+
+message Image {
+  optional string tag = 1;
+  optional string digest = 2;
+}
+
+message ListImagesResponse {
+  repeated Image images = 1;
+  // The next page token, if there are more results
+  optional string next_page_token = 2;
+}
+
+message DeleteImageRequest {
+  string project_id = 1;
+  repeated string image_tags = 2;
+}
+
+message DeleteImageResponse {}
