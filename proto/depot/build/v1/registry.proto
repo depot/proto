@@ -1,6 +1,8 @@
 syntax = "proto3";
 package depot.build.v1;
 
+import "google/protobuf/timestamp.proto";
+
 service RegistryService {
   rpc ListImages(ListImagesRequest) returns (ListImagesResponse);
   rpc DeleteImage(DeleteImageRequest) returns (DeleteImageResponse);
@@ -17,6 +19,8 @@ message ListImagesRequest {
 message Image {
   string tag = 1;
   string digest = 2;
+  google.protobuf.Timestamp pushed_at = 3;
+  uint64 size_bytes = 4;
 }
 
 message ListImagesResponse {
