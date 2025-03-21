@@ -40,6 +40,9 @@ message FinishBuildResponse {}
 message GetBuildStepsRequest {
   string project_id = 1;
   string build_id = 2;
+
+  optional int32 page_size = 3;
+  optional string page_token = 4;
 }
 
 enum CacheState {
@@ -56,17 +59,21 @@ message BuildStep {
   CacheState cache_state = 5;
   optional string error = 6;
   bool has_logs = 7;
-
 }
 
 message GetBuildStepsResponse {
   repeated BuildStep build_steps = 1;
+  optional string next_page_token = 2;
 }
 
 message GetBuildStepLogsRequest {
   string project_id = 1;
   string build_id = 2;
   string build_step_digest = 3;
+
+
+  optional int32 page_size = 4;
+  optional string page_token = 5;
 }
 
 message Log {
@@ -76,4 +83,5 @@ message Log {
 
 message GetBuildStepLogsResponse {
   repeated Log logs = 1;
+  optional string next_page_token = 6;
 }
