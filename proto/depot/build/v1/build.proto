@@ -1,9 +1,14 @@
 syntax = "proto3";
 package depot.build.v1;
 
+import "google/protobuf/timestamp.proto";
+
 service BuildService {
   rpc CreateBuild(CreateBuildRequest) returns (CreateBuildResponse);
   rpc FinishBuild(FinishBuildRequest) returns (FinishBuildResponse);
+
+  rpc GetBuildSteps(GetBuildStepsRequest) returns (GetBuildStepsResponse);
+  rpc GetBuildStepLogs(GetBuildStepLogsRequest) returns (GetBuildStepLogsResponse);
 }
 
 message CreateBuildRequest {
@@ -30,3 +35,51 @@ message FinishBuildRequest {
 }
 
 message FinishBuildResponse {}
+
+message GetBuildStepsRequest {
+  string project_id = 1;
+  string build_id = 2;
+
+  optional int32 page_size = 3;
+  optional string page_token = 4;
+}
+
+message GetBuildStepsResponse {
+  message BuildStep {
+    enum CacheState {
+      CACHE_STATE_UNSPECIFIED = 0;
+      CACHE_STATE_UNCACHED = 1;
+      CACHE_STATE_CACHED = 2;
+    }
+
+    string name = 1;
+    string digest = 2;
+    google.protobuf.Timestamp started_at = 3;
+    optional google.protobuf.Timestamp completed_at = 4;
+    CacheState cache_state = 5;
+    optional string error = 6;
+    bool has_logs = 7;
+  }
+
+  repeated BuildStep build_steps = 1;
+  optional string next_page_token = 2;
+}
+
+message GetBuildStepLogsRequest {
+  string project_id = 1;
+  string build_id = 2;
+  string build_step_digest = 3;
+
+
+  optional int32 page_size = 4;
+  optional string page_token = 5;
+}
+
+message GetBuildStepLogsResponse {
+  message Log {
+    string message = 1;
+    google.protobuf.Timestamp timestamp = 2;
+  }
+  repeated Log logs = 1;
+  optional string next_page_token = 6;
+}
