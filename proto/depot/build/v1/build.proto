@@ -1,9 +1,14 @@
 syntax = "proto3";
 package depot.build.v1;
 
+import "google/protobuf/timestamp.proto";
+
 service BuildService {
   rpc CreateBuild(CreateBuildRequest) returns (CreateBuildResponse);
   rpc FinishBuild(FinishBuildRequest) returns (FinishBuildResponse);
+
+  rpc GetBuildSteps(GetBuildStepsRequest) returns (GetBuildStepsResponse);
+  rpc GetBuildStepLogs(GetBuildStepLogsRequest) returns (GetBuildStepLogsResponse);
 }
 
 message CreateBuildRequest {
@@ -30,3 +35,45 @@ message FinishBuildRequest {
 }
 
 message FinishBuildResponse {}
+
+
+message GetBuildStepsRequest {
+  string project_id = 1;
+  string build_id = 2;
+}
+
+enum CacheState {
+  CACHE_STATE_UNSPECIFIED = 0;
+  CACHE_STATE_UNCACHED = 1;
+  CACHE_STATE_CACHED = 2;
+}
+
+message BuildStep {
+  string name = 1;
+  string digest = 2;
+  google.protobuf.Timestamp started_at = 3;
+  optional google.protobuf.Timestamp completed_at = 4;
+  CacheState cache_state = 5;
+  optional string error = 6;
+  bool has_logs = 7;
+
+}
+
+message GetBuildStepsResponse {
+  repeated BuildStep build_steps = 1;
+}
+
+message GetBuildStepLogsRequest {
+  string project_id = 1;
+  string build_id = 2;
+  string build_step_digest = 3;
+}
+
+message Log {
+  string message = 1;
+  google.protobuf.Timestamp timestamp = 2;
+}
+
+message GetBuildStepLogsResponse {
+  repeated Log logs = 1;
+}
