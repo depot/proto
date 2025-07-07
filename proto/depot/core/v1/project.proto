@@ -126,6 +126,10 @@ enum Hardware {
   HARDWARE_32X64 = 5;
   // 64 CPU and 128GB of memory. Supported by AWS builders.
   HARDWARE_64X128 = 6;
+  // 96 CPU and 192GB of memory. Supported by AWS builders.
+  HARDWARE_96X192 = 7;
+  // 192 CPU and 384GB of memory. Supported by AWS builders.
+  HARDWARE_192X384 = 8;
 }
 
 message ListTrustPoliciesRequest {
