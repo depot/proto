@@ -53,6 +53,7 @@ message GetUsageResponse {
   repeated GithubActionsJobsUsage github_actions_jobs = 4;
   repeated StorageUsage storage = 5;
   repeated AgentSandboxUsage agent_sandbox = 6;
+  repeated ComputeSandboxUsage compute_sandbox = 7;
 }
 
 message ContainerBuildUsage {
@@ -93,5 +94,11 @@ message AgentSandboxUsage {
   string agent_type = 1;
   int32 sandboxes_count = 2;
   float minutes_elapsed = 3;
-  float minutes_billed = 4; 
+  float minutes_billed = 4;
+}
+
+message ComputeSandboxUsage {
+  string rate_code = 1;
+  int32 sandboxes_count = 2;
+  int64 vcpu_seconds = 3;
 }
