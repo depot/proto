@@ -155,6 +155,7 @@ message AddTrustPolicyRequest {
     TrustPolicy.Buildkite buildkite = 2;
     TrustPolicy.CircleCI circleci = 3;
     TrustPolicy.GitHub github = 4;
+    TrustPolicy.GitLab gitlab = 5;
   }
 }
 
@@ -175,6 +176,7 @@ message TrustPolicy {
     Buildkite buildkite = 2;
     CircleCI circleci = 3;
     GitHub github = 4;
+    GitLab gitlab = 5;
   }
 
   message GitHub {
@@ -193,6 +195,13 @@ message TrustPolicy {
   message Buildkite {
     string organization_slug = 1;
     string pipeline_slug = 2;
+  }
+
+  message GitLab {
+    // Stable GitLab namespace identifier.
+    string namespace_id = 1;
+    // Stable GitLab project identifier.
+    string project_id = 2;
   }
 }
 
