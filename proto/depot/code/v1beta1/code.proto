@@ -6,6 +6,8 @@ package depot.code.v1beta1;
 service CodeService {
   // Creates a standalone repository or a mirror of a GitHub repository.
   rpc CreateRepository(CreateRepositoryRequest) returns (CreateRepositoryResponse);
+  // Deletes a repository and makes its refs unreachable. This cannot be undone.
+  rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse);
 }
 
 message CreateRepositoryRequest {
@@ -33,3 +35,10 @@ message GitHubRepository {
   // GitHub repository to mirror, in "owner/repository" format. Required.
   string repository = 1;
 }
+
+message DeleteRepositoryRequest {
+  // Unique identifier for the repository to delete. Returned by `CreateRepository`.
+  string repository_id = 1;
+}
+
+message DeleteRepositoryResponse {}
