@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package depot.code.v1beta1;
+
+// CodeService manages repositories hosted by Depot Code.
+service CodeService {
+  // Creates an empty repository ready to receive Git pushes.
+  rpc CreateRepository(CreateRepositoryRequest) returns (CreateRepositoryResponse);
+}
+
+message CreateRepositoryRequest {
+  // Repository name. Names may contain path segments. For example, "team/service". Required.
+  string repository = 1;
+  // Default branch name, without the "refs/heads/" prefix. For example, "main". Required.
+  string default_branch = 2;
+}
+
+message CreateRepositoryResponse {
+  // Unique identifier for the created repository.
+  string repository_id = 1;
+}
