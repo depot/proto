@@ -4,18 +4,32 @@ package depot.code.v1beta1;
 
 // CodeService manages repositories hosted by Depot Code.
 service CodeService {
-  // Creates an empty repository ready to receive Git pushes.
+  // Creates a standalone repository or a mirror of a GitHub repository.
   rpc CreateRepository(CreateRepositoryRequest) returns (CreateRepositoryResponse);
 }
 
 message CreateRepositoryRequest {
+  oneof source {
+    // Empty repository hosted by Depot.
+    StandaloneRepository standalone = 1;
+    // GitHub repository mirrored by Depot. Requires an active GitHub Code Access connection.
+    GitHubRepository github = 2;
+  }
+}
+
+message CreateRepositoryResponse {
+  // Unique identifier for the created repository.
+  string repository_id = 1;
+}
+
+message StandaloneRepository {
   // Repository name. Names may contain path segments. For example, "team/service". Required.
   string repository = 1;
   // Default branch name, without the "refs/heads/" prefix. For example, "main". Required.
   string default_branch = 2;
 }
 
-message CreateRepositoryResponse {
-  // Unique identifier for the created repository.
-  string repository_id = 1;
+message GitHubRepository {
+  // GitHub repository to mirror, in "owner/repository" format. Required.
+  string repository = 1;
 }
