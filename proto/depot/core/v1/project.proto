@@ -1,117 +1,180 @@
 syntax = "proto3";
 package depot.core.v1;
 
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 service ProjectService {
-  // List all projects
+  // List projects in the authenticated organization.
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {}
 
-  // Get a project
+  // Get a project in the authenticated organization.
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse) {}
 
-  // Create a new project
+  // Create a project.
   rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse) {}
 
-  // Update a project
+  // Update a project's name and build configuration.
   rpc UpdateProject(UpdateProjectRequest) returns (UpdateProjectResponse) {}
 
-  // Delete a project
+  // Delete a project and schedule its machines and cache data for removal.
   rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse) {}
 
-  // Reset a project will terminate all machines and delete all cached data.
+  // Terminate a project's machines and delete all cached data.
   rpc ResetProject(ResetProjectRequest) returns (ResetProjectResponse) {}
 
-  // List project's trust policies.
+  // Terminate a project's build machines without deleting cached data.
+  rpc ResetProjectMachines(ResetProjectMachinesRequest) returns (ResetProjectMachinesResponse) {}
+
+  // List a project's trust policies.
   rpc ListTrustPolicies(ListTrustPoliciesRequest) returns (ListTrustPoliciesResponse) {}
 
   // Add a trust policy to a project.
   rpc AddTrustPolicy(AddTrustPolicyRequest) returns (AddTrustPolicyResponse) {}
 
+  // Update a project's trust policy.
+  rpc UpdateTrustPolicy(UpdateTrustPolicyRequest) returns (UpdateTrustPolicyResponse) {}
+
   // Remove a trust policy from a project.
   rpc RemoveTrustPolicy(RemoveTrustPolicyRequest) returns (RemoveTrustPolicyResponse) {}
 
-  // List project's API tokens.
+  // List a project's API tokens.
   rpc ListTokens(ListTokensRequest) returns (ListTokensResponse) {}
 
   // Create a project API token.
   rpc CreateToken(CreateTokenRequest) returns (CreateTokenResponse) {}
 
-  // Create a project API token.
+  // Update a project API token.
   rpc UpdateToken(UpdateTokenRequest) returns (UpdateTokenResponse) {}
 
-  // Delete project API token.
+  // Delete a project API token.
   rpc DeleteToken(DeleteTokenRequest) returns (DeleteTokenResponse) {}
+
+  // Get a project's container registry retention policy.
+  rpc GetRegistryRetentionPolicy(GetRegistryRetentionPolicyRequest) returns (GetRegistryRetentionPolicyResponse) {}
+
+  // Set or disable a project's container registry retention policy.
+  rpc UpdateRegistryRetentionPolicy(UpdateRegistryRetentionPolicyRequest) returns (UpdateRegistryRetentionPolicyResponse) {}
 }
 
 message Project {
+  // Unique identifier for the project.
   string project_id = 1;
+  // Organization that owns the project.
   string organization_id = 2;
+  // Display name for the project.
   string name = 3;
+  // Depot region or cloud connection used for builds.
   string region_id = 4;
+  // Creation time, in RFC 3339 format.
   google.protobuf.Timestamp created_at = 5;
+  // Build cache retention and size limits.
   CachePolicy cache_policy = 6;
+  // Compute size used for builds.
   Hardware hardware = 7;
+  // Maximum duration of each build, in minutes. Unset when builds have no project-level timeout.
+  optional int32 build_timeout_minutes = 8;
+  // Maximum number of builds that can run concurrently. Unset when project autoscaling is disabled.
+  optional int32 max_concurrent_builds = 9;
 }
 
 message ListProjectsRequest {
+  // Depot region or cloud connection to match. Leave unset to include every region and connection.
   optional string region_id = 1;
+  // Number of projects to return per page. Maximum: 250. Default: 250.
   optional int32 page_size = 2;
+  // Token to fetch the next page. Leave empty to fetch the first page.
   optional string page_token = 3;
 }
 
 message ListProjectsResponse {
+  // Projects in the authenticated organization.
   repeated Project projects = 1;
+  // Token to fetch the next page. Empty when there are no more projects.
   optional string next_page_token = 2;
 }
 
 message GetProjectRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
   string project_id = 1;
 }
 
 message GetProjectResponse {
+  // Requested project.
   Project project = 1;
 }
 
 message CreateProjectRequest {
+  // Display name for the project.
   string name = 1;
+  // Organization that will own the project. Required for user tokens that belong to more than one organization.
   optional string organization_id = 2;
+  // Depot region or cloud connection to use for builds.
   string region_id = 3;
+  // Build cache retention and size limits. Default: 50 GB and 14 days.
   optional CachePolicy cache_policy = 4;
+  // Compute size to use for builds. Default: `HARDWARE_16X32` for AWS builders.
   optional Hardware hardware = 5;
+  // Maximum duration of each build, in minutes. Leave unset for no project-level timeout.
+  optional int32 build_timeout_minutes = 6;
+  // Maximum number of builds that can run concurrently. Leave unset to disable project autoscaling.
+  optional int32 max_concurrent_builds = 7;
 }
 
 message CreateProjectResponse {
+  // Created project. If an active project with the same name already exists in the organization, that project is returned.
   Project project = 1;
 }
 
 message UpdateProjectRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
   string project_id = 1;
+  // New display name. Leave unset to keep the current name.
   optional string name = 2;
+  // New Depot region or cloud connection. Changing it resets the project's machines and cached data.
   optional string region_id = 3;
+  // New build cache retention or size limits. Leave unset to keep the current policy.
   optional CachePolicy cache_policy = 4;
+  // New compute size. Leave unset to keep the current size.
   optional Hardware hardware = 5;
+  // New maximum build duration. Set `null` to remove the project-level timeout.
+  NullableInt32 build_timeout_minutes = 6;
+  // New maximum concurrent build count. Set `null` to disable project autoscaling.
+  NullableInt32 max_concurrent_builds = 7;
 }
 
 message UpdateProjectResponse {
+  // Updated project.
   Project project = 1;
 }
 
 message DeleteProjectRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
   string project_id = 1;
 }
 
 message DeleteProjectResponse {}
 
 message ResetProjectRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
   string project_id = 1;
 }
 
 message ResetProjectResponse {}
 
+message ResetProjectMachinesRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
+  string project_id = 1;
+}
+
+message ResetProjectMachinesResponse {}
+
 message CachePolicy {
+  // Maximum cache size, in bytes. Use `keepGb` instead.
   optional int64 keep_bytes = 1 [deprecated = true];
+  // Number of days to retain cache entries since their last use. Minimum: 1. Maximum: 30.
   int32 keep_days = 2;
+  // Maximum cache size per machine architecture, in gigabytes. Minimum: 25. Maximum for Depot-hosted projects: 1000.
   int32 keep_gb = 3;
 }
 
@@ -142,101 +205,216 @@ enum Hardware {
 }
 
 message ListTrustPoliciesRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
   string project_id = 1;
+  // Provider to match. Leave unset to include every provider.
+  optional TrustPolicyProvider provider = 2;
+  // Number of trust policies to return per page. Maximum: 250. Default: 250.
+  optional int32 page_size = 3;
+  // Token to fetch the next page. Leave empty to fetch the first page.
+  optional string page_token = 4;
 }
 
 message ListTrustPoliciesResponse {
+  // Trust policies attached to the project.
   repeated TrustPolicy trust_policies = 1;
+  // Token to fetch the next page. Empty when there are no more trust policies.
+  optional string next_page_token = 2;
 }
 
 message AddTrustPolicyRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
   string project_id = 1;
   oneof provider {
+    // Buildkite organization and pipeline allowed to access the project.
     TrustPolicy.Buildkite buildkite = 2;
+    // CircleCI organization and project allowed to access the project.
     TrustPolicy.CircleCI circleci = 3;
+    // GitHub repository allowed to access the project.
     TrustPolicy.GitHub github = 4;
+    // GitLab namespace and project allowed to access the project.
     TrustPolicy.GitLab gitlab = 5;
   }
 }
 
 message AddTrustPolicyResponse {
+  // Added trust policy. If an active policy already has the same provider and source, that policy is returned.
+  TrustPolicy trust_policy = 1;
+}
+
+message UpdateTrustPolicyRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
+  string project_id = 1;
+  // Unique identifier for the trust policy. Returned by `ListTrustPolicies` and `AddTrustPolicy`.
+  string trust_policy_id = 2;
+  // Whether public pull requests from forks may use the GitHub trust policy. Only valid for GitHub policies.
+  optional bool allow_public_pull_requests = 3;
+}
+
+message UpdateTrustPolicyResponse {
+  // Updated trust policy.
   TrustPolicy trust_policy = 1;
 }
 
 message RemoveTrustPolicyRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
   string project_id = 1;
+  // Unique identifier for the trust policy. Returned by `ListTrustPolicies` and `AddTrustPolicy`.
   string trust_policy_id = 2;
 }
 
 message RemoveTrustPolicyResponse {}
 
 message TrustPolicy {
+  // Unique identifier for the trust policy.
   string trust_policy_id = 1;
   oneof provider {
+    // Buildkite organization and pipeline allowed to access the project.
     Buildkite buildkite = 2;
+    // CircleCI organization and project allowed to access the project.
     CircleCI circleci = 3;
+    // GitHub repository allowed to access the project.
     GitHub github = 4;
+    // GitLab namespace and project allowed to access the project.
     GitLab gitlab = 5;
   }
 
   message GitHub {
-    // The GitHub organization or user name
+    // GitHub organization or user name.
     string repository_owner = 1;
+    // GitHub repository name.
     string repository = 2;
+    // Whether public pull requests from forks may use this trust policy.
+    bool allow_public_pull_requests = 3;
   }
 
   message CircleCI {
-    // CircleCI organization UUID must be a valid UUID, not the friendly organization ID.
+    // Stable CircleCI organization UUID, not the friendly organization identifier.
     string organization_uuid = 1;
-    // CircleCI project UUID must be a valid UUID, not the friendly project ID
+    // Stable CircleCI project UUID, not the friendly project identifier.
     string project_uuid = 2;
   }
 
   message Buildkite {
+    // Buildkite organization slug.
     string organization_slug = 1;
+    // Buildkite pipeline slug.
     string pipeline_slug = 2;
   }
 
   message GitLab {
-    // Stable GitLab namespace identifier.
+    // Stable numeric GitLab namespace identifier.
     string namespace_id = 1;
-    // Stable GitLab project identifier.
+    // Stable numeric GitLab project identifier.
     string project_id = 2;
   }
 }
 
+enum TrustPolicyProvider {
+  TRUST_POLICY_PROVIDER_UNSPECIFIED = 0;
+  TRUST_POLICY_PROVIDER_BUILDKITE = 1;
+  TRUST_POLICY_PROVIDER_CIRCLE_CI = 2;
+  TRUST_POLICY_PROVIDER_GITHUB = 3;
+  TRUST_POLICY_PROVIDER_GITLAB = 4;
+}
+
 message ListTokensRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
   string project_id = 1;
+  // Case-insensitive text to match in token descriptions. Leave unset to include every token.
+  optional string query = 2;
+  // Number of tokens to return per page. Maximum: 250. Default: 250.
+  optional int32 page_size = 3;
+  // Token to fetch the next page. Leave empty to fetch the first page.
+  optional string page_token = 4;
 }
 
 message ListTokensResponse {
+  // Project API tokens. Token secrets are never returned by this method.
   repeated Token tokens = 1;
+  // Token to fetch the next page. Empty when there are no more tokens.
+  optional string next_page_token = 2;
 
   message Token {
+    // Unique identifier for the token.
     string token_id = 1;
+    // Human-readable description of the token.
     string description = 2;
+    // Creation time, in RFC 3339 format.
+    google.protobuf.Timestamp created_at = 3;
   }
 }
 
 message CreateTokenRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
   string project_id = 1;
+  // Human-readable description for the token.
   string description = 2;
 }
 
 message CreateTokenResponse {
+  // Unique identifier for the token.
   string token_id = 1;
+  // Token secret. Store it securely because it cannot be retrieved again.
   string secret = 2;
 }
 
 message UpdateTokenRequest {
+  // Unique identifier for the token. Returned by `ListTokens` and `CreateToken`.
   string token_id = 1;
+  // New human-readable description for the token.
   string description = 2;
 }
 
 message UpdateTokenResponse {}
 
 message DeleteTokenRequest {
+  // Unique identifier for the token. Returned by `ListTokens` and `CreateToken`.
   string token_id = 1;
 }
 
 message DeleteTokenResponse {}
+
+message GetRegistryRetentionPolicyRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
+  string project_id = 1;
+}
+
+message GetRegistryRetentionPolicyResponse {
+  // Current container registry retention policy. `enabled` is false when the project has no policy.
+  RegistryRetentionPolicy policy = 1;
+}
+
+message UpdateRegistryRetentionPolicyRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `CreateProject`.
+  string project_id = 1;
+  // Whether registry retention is enabled. When false, any existing policy is deleted and the keep fields must be unset.
+  bool enabled = 2;
+  // Number of most recently pushed images to keep. Set exactly one of `keepCount` or `keepDays` when enabled.
+  optional int32 keep_count = 3;
+  // Number of days to keep images after they are pushed. Set exactly one of `keepCount` or `keepDays` when enabled.
+  optional int32 keep_days = 4;
+}
+
+message UpdateRegistryRetentionPolicyResponse {
+  // Updated container registry retention policy.
+  RegistryRetentionPolicy policy = 1;
+}
+
+message RegistryRetentionPolicy {
+  // Whether automatic registry retention is enabled.
+  bool enabled = 1;
+  // Number of most recently pushed images to keep. Unset when retention is disabled or uses `keepDays`.
+  optional int32 keep_count = 2;
+  // Number of days to keep images after they are pushed. Unset when retention is disabled or uses `keepCount`.
+  optional int32 keep_days = 3;
+}
+
+message NullableInt32 {
+  oneof kind {
+    // Clears the current value.
+    google.protobuf.NullValue null = 1;
+    // Positive integer to store.
+    int32 value = 2;
+  }
+}
