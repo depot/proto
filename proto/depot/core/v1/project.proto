@@ -74,7 +74,8 @@ message Project {
   Hardware hardware = 7;
   // Maximum duration of each build, in minutes. Unset when builds have no project-level timeout.
   optional int32 build_timeout_minutes = 8;
-  // Maximum number of builds that can run concurrently. Unset when project autoscaling is disabled.
+  // Maximum concurrent builds per builder instance before horizontal autoscaling adds another instance.
+  // Unset when project autoscaling is disabled.
   optional int32 max_concurrent_builds = 9;
 }
 
@@ -117,7 +118,8 @@ message CreateProjectRequest {
   optional Hardware hardware = 5;
   // Maximum duration of each build, in minutes. Leave unset for no project-level timeout.
   optional int32 build_timeout_minutes = 6;
-  // Maximum number of builds that can run concurrently. Leave unset to disable project autoscaling.
+  // Maximum concurrent builds per builder instance before horizontal autoscaling adds another instance.
+  // Leave unset to disable project autoscaling.
   optional int32 max_concurrent_builds = 7;
 }
 
@@ -139,7 +141,8 @@ message UpdateProjectRequest {
   optional Hardware hardware = 5;
   // New maximum build duration. Set `null` to remove the project-level timeout.
   NullableInt32 build_timeout_minutes = 6;
-  // New maximum concurrent build count. Set `null` to disable project autoscaling.
+  // New maximum concurrent builds per builder instance before horizontal autoscaling adds another instance.
+  // Set `null` to disable project autoscaling.
   NullableInt32 max_concurrent_builds = 7;
 }
 
