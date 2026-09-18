@@ -1,0 +1,651 @@
+syntax = "proto3";
+
+package depot.core.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// GithubActionsService manages GitHub Actions jobs, logs, analytics, and connections for the authenticated organization.
+service GithubActionsService {
+  // List GitHub Actions jobs, newest first.
+  rpc ListGithubActionsJobs(ListGithubActionsJobsRequest) returns (ListGithubActionsJobsResponse) {}
+
+  // Get one GitHub Actions job.
+  rpc GetGithubActionsJob(GetGithubActionsJobRequest) returns (GetGithubActionsJobResponse) {}
+
+  // Terminate the compute resource for a queued or running GitHub Actions job.
+  rpc TerminateGithubActionsJob(TerminateGithubActionsJobRequest) returns (TerminateGithubActionsJobResponse) {}
+
+  // Search GitHub Actions log lines, newest match first.
+  rpc SearchGithubActionsLogs(SearchGithubActionsLogsRequest) returns (SearchGithubActionsLogsResponse) {}
+
+  // Count GitHub Actions log lines matching a search.
+  rpc CountGithubActionsLogs(CountGithubActionsLogsRequest) returns (CountGithubActionsLogsResponse) {}
+
+  // Get log lines surrounding one search result.
+  rpc GetGithubActionsLogContext(GetGithubActionsLogContextRequest) returns (GetGithubActionsLogContextResponse) {}
+
+  // List values available for GitHub Actions log search filters.
+  rpc ListGithubActionsLogFacets(ListGithubActionsLogFacetsRequest) returns (ListGithubActionsLogFacetsResponse) {}
+
+  // Get time-bucketed GitHub Actions job and usage analytics.
+  rpc GetGithubActionsAnalytics(GetGithubActionsAnalyticsRequest) returns (GetGithubActionsAnalyticsResponse) {}
+
+  // List aggregate CPU, memory, duration, and failure analytics by job.
+  rpc ListGithubActionsJobAnalytics(ListGithubActionsJobAnalyticsRequest) returns (ListGithubActionsJobAnalyticsResponse) {}
+
+  // List runner-size recommendations derived from GitHub Actions job metrics.
+  rpc ListGithubActionsRecommendations(ListGithubActionsRecommendationsRequest) returns (ListGithubActionsRecommendationsResponse) {}
+
+  // List GitHub App connections for the authenticated organization.
+  rpc ListGithubActionsConnections(ListGithubActionsConnectionsRequest) returns (ListGithubActionsConnectionsResponse) {}
+
+  // Create a short-lived URL for installing the Depot GitHub App.
+  rpc CreateGithubActionsInstallationUrl(CreateGithubActionsInstallationUrlRequest) returns (CreateGithubActionsInstallationUrlResponse) {}
+
+  // Disconnect a GitHub App installation from the authenticated organization.
+  rpc DeleteGithubActionsConnection(DeleteGithubActionsConnectionRequest) returns (DeleteGithubActionsConnectionResponse) {}
+
+  // List repositories visible through one GitHub App connection.
+  rpc ListGithubActionsRepositories(ListGithubActionsRepositoriesRequest) returns (ListGithubActionsRepositoriesResponse) {}
+
+  // Get a GitHub Actions job's test-result summary.
+  rpc GetGithubActionsTestResultsSummary(GetGithubActionsTestResultsSummaryRequest) returns (GetGithubActionsTestResultsSummaryResponse) {}
+
+  // Get actual and projected GitHub Actions usage for a billing period.
+  rpc GetGithubActionsUsageProjection(GetGithubActionsUsageProjectionRequest) returns (GetGithubActionsUsageProjectionResponse) {}
+}
+
+message GithubActionsTimeRange {
+  // Inclusive start time, in RFC 3339 format.
+  google.protobuf.Timestamp start_at = 1;
+  // Exclusive end time, in RFC 3339 format. Must be later than `startAt`.
+  google.protobuf.Timestamp end_at = 2;
+}
+
+enum GithubActionsJobStatus {
+  GITHUB_ACTIONS_JOB_STATUS_UNSPECIFIED = 0;
+  GITHUB_ACTIONS_JOB_STATUS_QUEUED = 1;
+  GITHUB_ACTIONS_JOB_STATUS_WAITING = 2;
+  GITHUB_ACTIONS_JOB_STATUS_RUNNING = 3;
+  GITHUB_ACTIONS_JOB_STATUS_FINISHED = 4;
+}
+
+enum GithubActionsJobConclusion {
+  GITHUB_ACTIONS_JOB_CONCLUSION_UNSPECIFIED = 0;
+  GITHUB_ACTIONS_JOB_CONCLUSION_SUCCESS = 1;
+  GITHUB_ACTIONS_JOB_CONCLUSION_FAILURE = 2;
+  GITHUB_ACTIONS_JOB_CONCLUSION_CANCELLED = 3;
+  GITHUB_ACTIONS_JOB_CONCLUSION_SKIPPED = 4;
+}
+
+message GithubActionsJob {
+  // Unique GitHub identifier for the job.
+  string job_id = 1;
+  // Unique GitHub identifier for the workflow run.
+  string run_id = 2;
+  // Connected GitHub repository, in `owner/name` format.
+  string repository = 3;
+  // Display name shown for the job in GitHub.
+  string name = 4;
+  // Workflow display name. Empty when GitHub did not provide one.
+  string workflow_name = 5;
+  // Workflow file path. Empty when it is unavailable.
+  string workflow_path = 6;
+  // Current state of the job.
+  GithubActionsJobStatus status = 7;
+  // Final result. Unspecified until the job finishes.
+  GithubActionsJobConclusion conclusion = 8;
+  // Runner label requested by the workflow.
+  string runner_label = 9;
+  // Requested operating system.
+  string requested_os = 10;
+  // Requested processor architecture.
+  string requested_architecture = 11;
+  // Requested virtual CPU count. Zero when the label does not declare a CPU count.
+  int32 requested_cpu_count = 12;
+  // Requested memory, in gibibytes. Zero when the label does not declare memory.
+  int32 requested_memory_gib = 13;
+  // GitHub URL for the job.
+  string github_url = 14;
+  // Time Depot received the job, in RFC 3339 format.
+  google.protobuf.Timestamp created_at = 15;
+  // Time the job started, in RFC 3339 format. Unset until the job starts.
+  google.protobuf.Timestamp started_at = 16;
+  // Time the job finished, in RFC 3339 format. Unset until the job finishes.
+  google.protobuf.Timestamp finished_at = 17;
+  // Elapsed execution time, in seconds. Zero until enough lifecycle data is available.
+  int64 duration_seconds = 18;
+  // Billable execution time, in seconds. Zero until enough lifecycle data is available.
+  int64 billable_seconds = 19;
+  // Queue time before execution started, in seconds. Zero until enough lifecycle data is available.
+  int64 queue_seconds = 20;
+}
+
+message ListGithubActionsJobsRequest {
+  // Connected repositories to include, in `owner/name` format. Leave empty to include every connected repository.
+  repeated string repositories = 1;
+  // Job states to include. Leave empty to include every state.
+  repeated GithubActionsJobStatus statuses = 2;
+  // Job conclusions to include. Leave empty to include every conclusion.
+  repeated GithubActionsJobConclusion conclusions = 3;
+  // Runner labels to include. Leave empty to include every runner label.
+  repeated string runner_labels = 4;
+  // Job creation window. Maximum: 90 days. Default: the last 30 days.
+  optional GithubActionsTimeRange time_range = 5;
+  // Case-insensitive text matched against job and workflow names. Numeric values also match exact GitHub job and run IDs.
+  optional string query = 6;
+  // Number of jobs to return per page. Maximum: 250. Default: 50.
+  optional int32 page_size = 7;
+  // Token to fetch the next page. Leave empty to fetch the first page. Keep filters and `timeRange` unchanged between pages.
+  optional string page_token = 8;
+}
+
+message ListGithubActionsJobsResponse {
+  // Jobs matching the request.
+  repeated GithubActionsJob jobs = 1;
+  // Token to fetch the next page. Empty when there are no more jobs.
+  optional string next_page_token = 2;
+  // Total matching jobs as of `dataThrough`. This value can change while jobs are created or finish.
+  int64 total_size = 3;
+  // Latest time included in the response, in RFC 3339 format.
+  google.protobuf.Timestamp data_through = 4;
+}
+
+message GetGithubActionsJobRequest {
+  // Connected GitHub repository containing the job, in `owner/name` format.
+  string repository = 1;
+  // Unique GitHub identifier for the job. Returned by `ListGithubActionsJobs`.
+  string job_id = 2;
+}
+
+message GetGithubActionsJobResponse {
+  // Requested job.
+  GithubActionsJob job = 1;
+}
+
+message TerminateGithubActionsJobRequest {
+  // Connected GitHub repository containing the job, in `owner/name` format.
+  string repository = 1;
+  // Unique GitHub identifier for the job. Returned by `ListGithubActionsJobs`.
+  string job_id = 2;
+}
+
+enum GithubActionsTerminationOutcome {
+  GITHUB_ACTIONS_TERMINATION_OUTCOME_UNSPECIFIED = 0;
+  GITHUB_ACTIONS_TERMINATION_OUTCOME_REQUESTED = 1;
+  GITHUB_ACTIONS_TERMINATION_OUTCOME_ALREADY_REQUESTED = 2;
+  GITHUB_ACTIONS_TERMINATION_OUTCOME_ALREADY_TERMINAL = 3;
+  GITHUB_ACTIONS_TERMINATION_OUTCOME_NO_ACTIVE_COMPUTE = 4;
+}
+
+message TerminateGithubActionsJobResponse {
+  // Unique GitHub identifier for the job.
+  string job_id = 1;
+  // Result of the idempotent termination request.
+  GithubActionsTerminationOutcome outcome = 2;
+  // Current state of the job when the request completed.
+  GithubActionsJobStatus status = 3;
+}
+
+message GithubActionsLogFilters {
+  // Connected repositories to include, in `owner/name` format. Leave empty to include every connected repository.
+  repeated string repositories = 1;
+  // Workflow names to include. Leave empty to include every workflow.
+  repeated string workflows = 2;
+  // Runner labels to include. Leave empty to include every runner label.
+  repeated string runner_labels = 3;
+  // Action identifiers to include. Leave empty to include every action.
+  repeated string actions = 4;
+  // Unique compute identifier to match. Leave empty to include every compute resource.
+  optional string compute_id = 5;
+}
+
+message GithubActionsLogLine {
+  // Stable identifier for this log line. Use it with `GetGithubActionsLogContext`.
+  string line_id = 1;
+  // Unique GitHub identifier for the job.
+  string job_id = 2;
+  // Connected GitHub repository, in `owner/name` format.
+  string repository = 3;
+  // Workflow display name. Empty when GitHub did not provide one.
+  string workflow_name = 4;
+  // Job display name.
+  string job_name = 5;
+  // Step identifier. Empty for job-level output.
+  string step_id = 6;
+  // Step display name. Empty for job-level output.
+  string step_name = 7;
+  // Time the line was emitted, in RFC 3339 format.
+  google.protobuf.Timestamp timestamp = 8;
+  // Position of this line within its job log.
+  int64 line_number = 9;
+  // UTF-8 log text.
+  string body = 10;
+}
+
+message SearchGithubActionsLogsRequest {
+  // Text to match in log bodies. Empty text returns unfiltered log lines.
+  string query = 1;
+  // Time window to search. Maximum: 30 days. Default: the last hour.
+  optional GithubActionsTimeRange time_range = 2;
+  // Structured log filters.
+  optional GithubActionsLogFilters filters = 3;
+  // Number of matching lines to return per page. Maximum: 1000. Default: 100.
+  optional int32 page_size = 4;
+  // Token to fetch the next page. Leave empty to fetch the first page. Keep the query, filters, and `timeRange` unchanged between pages.
+  optional string page_token = 5;
+}
+
+message SearchGithubActionsLogsResponse {
+  // Log lines matching the request, newest first.
+  repeated GithubActionsLogLine lines = 1;
+  // Token to fetch the next page. Empty when there are no more matching lines.
+  optional string next_page_token = 2;
+  // Total matching lines as of `dataThrough`.
+  int64 total_size = 3;
+  // Latest time included in the response, in RFC 3339 format.
+  google.protobuf.Timestamp data_through = 4;
+}
+
+message CountGithubActionsLogsRequest {
+  // Text to match in log bodies. Empty text counts unfiltered log lines.
+  string query = 1;
+  // Time window to search. Maximum: 30 days. Default: the last hour.
+  optional GithubActionsTimeRange time_range = 2;
+  // Structured log filters.
+  optional GithubActionsLogFilters filters = 3;
+}
+
+message CountGithubActionsLogsResponse {
+  // Number of matching log lines as of `dataThrough`.
+  int64 count = 1;
+  // Latest time included in the count, in RFC 3339 format.
+  google.protobuf.Timestamp data_through = 2;
+}
+
+message GetGithubActionsLogContextRequest {
+  // Stable log-line identifier returned by `SearchGithubActionsLogs`.
+  string line_id = 1;
+  // Connected GitHub repository containing the line, in `owner/name` format.
+  string repository = 2;
+  // Number of preceding and following lines to return. Maximum: 100. Default: 5.
+  optional int32 surrounding_line_count = 3;
+}
+
+message GetGithubActionsLogContextResponse {
+  // Lines surrounding and including the requested line, oldest first.
+  repeated GithubActionsLogLine lines = 1;
+}
+
+enum GithubActionsLogFacetKind {
+  GITHUB_ACTIONS_LOG_FACET_KIND_UNSPECIFIED = 0;
+  GITHUB_ACTIONS_LOG_FACET_KIND_REPOSITORY = 1;
+  GITHUB_ACTIONS_LOG_FACET_KIND_WORKFLOW = 2;
+  GITHUB_ACTIONS_LOG_FACET_KIND_RUNNER_LABEL = 3;
+  GITHUB_ACTIONS_LOG_FACET_KIND_ACTION = 4;
+}
+
+message ListGithubActionsLogFacetsRequest {
+  // Facet to list.
+  GithubActionsLogFacetKind kind = 1;
+  // Time window to inspect. Maximum: 30 days. Default: the last hour.
+  optional GithubActionsTimeRange time_range = 2;
+  // Filters applied before facet values are counted.
+  optional GithubActionsLogFilters filters = 3;
+  // Case-insensitive text to match against facet values.
+  optional string query = 4;
+  // Number of facet values to return per page. Maximum: 250. Default: 100.
+  optional int32 page_size = 5;
+  // Token to fetch the next page. Leave empty to fetch the first page. Keep the kind, filters, query, and `timeRange` unchanged between pages.
+  optional string page_token = 6;
+}
+
+message GithubActionsLogFacet {
+  // Facet value.
+  string value = 1;
+  // Number of log lines associated with the value as of `dataThrough`.
+  int64 count = 2;
+}
+
+message ListGithubActionsLogFacetsResponse {
+  // Facet values ordered by descending count, then value.
+  repeated GithubActionsLogFacet facets = 1;
+  // Token to fetch the next page. Empty when there are no more facet values.
+  optional string next_page_token = 2;
+  // Latest time included in the response, in RFC 3339 format.
+  google.protobuf.Timestamp data_through = 3;
+}
+
+enum GithubActionsAggregationUnit {
+  GITHUB_ACTIONS_AGGREGATION_UNIT_UNSPECIFIED = 0;
+  GITHUB_ACTIONS_AGGREGATION_UNIT_HOUR = 1;
+  GITHUB_ACTIONS_AGGREGATION_UNIT_DAY = 2;
+}
+
+message GithubActionsAnalyticsFilters {
+  // Connected repositories to include, in `owner/name` format. Leave empty to include every connected repository.
+  repeated string repositories = 1;
+  // Workflow names to include. Leave empty to include every workflow.
+  repeated string workflows = 2;
+  // Job names to include. Leave empty to include every job.
+  repeated string jobs = 3;
+  // Runner labels to include. Leave empty to include every runner label.
+  repeated string runner_labels = 4;
+  // Workflow file paths to include. Leave empty to include every workflow path.
+  repeated string workflow_paths = 5;
+}
+
+message GetGithubActionsAnalyticsRequest {
+  // Analytics window. Maximum: 90 days. Default: the last 30 days.
+  optional GithubActionsTimeRange time_range = 1;
+  // Size of each returned time bucket. Default: day.
+  optional GithubActionsAggregationUnit aggregation_unit = 2;
+  // Jobs to include.
+  optional GithubActionsAnalyticsFilters filters = 3;
+}
+
+message GithubActionsAnalyticsTotals {
+  // Number of jobs.
+  int64 job_count = 1;
+  // Number of successful jobs.
+  int64 successful_job_count = 2;
+  // Number of failed jobs.
+  int64 failed_job_count = 3;
+  // Number of cancelled jobs.
+  int64 cancelled_job_count = 4;
+  // Sum of elapsed job time, in seconds.
+  int64 elapsed_seconds = 5;
+  // Sum of billable job time, in seconds.
+  int64 billable_seconds = 6;
+  // Mean job duration, in seconds.
+  double average_duration_seconds = 7;
+  // Failed jobs divided by all terminal jobs, from 0 through 1.
+  double failure_rate = 8;
+}
+
+message GithubActionsAnalyticsBucket {
+  // Inclusive start of this bucket, in RFC 3339 format.
+  google.protobuf.Timestamp start_at = 1;
+  // Exclusive end of this bucket, in RFC 3339 format.
+  google.protobuf.Timestamp end_at = 2;
+  // Job and usage totals for this bucket.
+  GithubActionsAnalyticsTotals totals = 3;
+}
+
+message GetGithubActionsAnalyticsResponse {
+  // Aggregate totals for the requested window.
+  GithubActionsAnalyticsTotals totals = 1;
+  // Totals split into the requested time buckets, oldest first.
+  repeated GithubActionsAnalyticsBucket buckets = 2;
+  // Latest time included in the response, in RFC 3339 format. Analytics can lag completed jobs by up to 15 minutes.
+  google.protobuf.Timestamp data_through = 3;
+}
+
+message ListGithubActionsJobAnalyticsRequest {
+  // Analytics window. Maximum: 90 days. Default: the last 30 days.
+  optional GithubActionsTimeRange time_range = 1;
+  // Jobs to include.
+  optional GithubActionsAnalyticsFilters filters = 2;
+  // Number of job groups to return per page. Maximum: 250. Default: 50.
+  optional int32 page_size = 3;
+  // Token to fetch the next page. Leave empty to fetch the first page. Keep filters and `timeRange` unchanged between pages.
+  optional string page_token = 4;
+}
+
+message GithubActionsJobAnalytics {
+  // Connected GitHub repository, in `owner/name` format.
+  string repository = 1;
+  // Workflow display name. Empty when GitHub did not provide one.
+  string workflow_name = 2;
+  // Workflow file path. Empty when it is unavailable.
+  string workflow_path = 3;
+  // Job key from the workflow file.
+  string job_name = 4;
+  // Most recently observed runner label.
+  string runner_label = 5;
+  // Number of jobs represented by the metrics.
+  int64 job_count = 6;
+  // Mean CPU utilization, from 0 through 1.
+  double average_cpu_utilization = 7;
+  // Peak CPU utilization, from 0 through 1.
+  double peak_cpu_utilization = 8;
+  // Mean memory utilization, from 0 through 1.
+  double average_memory_utilization = 9;
+  // Peak memory utilization, from 0 through 1.
+  double peak_memory_utilization = 10;
+  // Mean job duration, in seconds.
+  double average_duration_seconds = 11;
+  // 95th-percentile job duration, in seconds.
+  double p95_duration_seconds = 12;
+  // Failed jobs divided by all terminal jobs, from 0 through 1.
+  double failure_rate = 13;
+}
+
+message ListGithubActionsJobAnalyticsResponse {
+  // Per-job analytics ordered by descending job count, then repository, workflow, and job.
+  repeated GithubActionsJobAnalytics jobs = 1;
+  // Token to fetch the next page. Empty when there are no more job groups.
+  optional string next_page_token = 2;
+  // Latest time included in the response, in RFC 3339 format. Analytics can lag completed jobs by up to 15 minutes.
+  google.protobuf.Timestamp data_through = 3;
+}
+
+message ListGithubActionsRecommendationsRequest {
+  // Metrics window. Maximum: 90 days. Default: the last 30 days.
+  optional GithubActionsTimeRange time_range = 1;
+  // Jobs to include.
+  optional GithubActionsAnalyticsFilters filters = 2;
+  // Number of recommendations to return per page. Maximum: 250. Default: 50.
+  optional int32 page_size = 3;
+  // Token to fetch the next page. Leave empty to fetch the first page. Keep filters and `timeRange` unchanged between pages.
+  optional string page_token = 4;
+}
+
+enum GithubActionsRecommendationType {
+  GITHUB_ACTIONS_RECOMMENDATION_TYPE_UNSPECIFIED = 0;
+  GITHUB_ACTIONS_RECOMMENDATION_TYPE_SIZE_UP = 1;
+  GITHUB_ACTIONS_RECOMMENDATION_TYPE_SIZE_DOWN = 2;
+}
+
+message GithubActionsRunnerSize {
+  // Depot runner label.
+  string label = 1;
+  // Virtual CPU count.
+  int32 cpu_count = 2;
+  // Memory, in gibibytes.
+  int32 memory_gib = 3;
+  // Published price per minute, in US dollars. Empty for custom runner sizes.
+  optional string price_per_minute_usd = 4;
+}
+
+message GithubActionsRecommendation {
+  // Connected GitHub repository, in `owner/name` format.
+  string repository = 1;
+  // Workflow display name. Empty when GitHub did not provide one.
+  string workflow_name = 2;
+  // Job key from the workflow file.
+  string job_name = 3;
+  // Recommended direction of change.
+  GithubActionsRecommendationType type = 4;
+  // Stable, machine-readable explanation. Can be `high_average_cpu`, `high_average_memory`, or `low_utilization`.
+  string reason = 5;
+  // Current runner size.
+  GithubActionsRunnerSize current_size = 6;
+  // Suggested runner size.
+  GithubActionsRunnerSize suggested_size = 7;
+  // Mean CPU utilization, from 0 through 1.
+  double average_cpu_utilization = 8;
+  // Peak CPU utilization, from 0 through 1.
+  double peak_cpu_utilization = 9;
+  // Mean memory utilization, from 0 through 1.
+  double average_memory_utilization = 10;
+  // Peak memory utilization, from 0 through 1.
+  double peak_memory_utilization = 11;
+  // Number of jobs represented by the recommendation.
+  int64 sample_size = 12;
+}
+
+message ListGithubActionsRecommendationsResponse {
+  // Recommendations ordered by type, then repository, workflow, and job.
+  repeated GithubActionsRecommendation recommendations = 1;
+  // Token to fetch the next page. Empty when there are no more recommendations.
+  optional string next_page_token = 2;
+  // Latest time included in the response, in RFC 3339 format. Recommendations can lag completed jobs by up to 15 minutes.
+  google.protobuf.Timestamp data_through = 3;
+}
+
+enum GithubActionsConnectionStatus {
+  GITHUB_ACTIONS_CONNECTION_STATUS_UNSPECIFIED = 0;
+  GITHUB_ACTIONS_CONNECTION_STATUS_PENDING = 1;
+  GITHUB_ACTIONS_CONNECTION_STATUS_ACTIVE = 2;
+  GITHUB_ACTIONS_CONNECTION_STATUS_SUSPENDED = 3;
+}
+
+enum GithubActionsRepositorySelection {
+  GITHUB_ACTIONS_REPOSITORY_SELECTION_UNSPECIFIED = 0;
+  GITHUB_ACTIONS_REPOSITORY_SELECTION_ALL = 1;
+  GITHUB_ACTIONS_REPOSITORY_SELECTION_SELECTED = 2;
+}
+
+message GithubActionsConnection {
+  // Unique Depot identifier for the connection.
+  string connection_id = 1;
+  // Public GitHub installation identifier.
+  string installation_id = 2;
+  // GitHub organization or account name.
+  string account = 3;
+  // Current connection state.
+  GithubActionsConnectionStatus status = 4;
+  // Repository access configured for the runner app.
+  GithubActionsRepositorySelection repository_selection = 5;
+  // Time the connection was created, in RFC 3339 format.
+  google.protobuf.Timestamp created_at = 6;
+  // Time repository access was last refreshed, in RFC 3339 format. Unset until the first refresh completes.
+  google.protobuf.Timestamp repositories_refreshed_at = 7;
+  // GitHub URL where an organization owner can manage repository access.
+  string settings_url = 8;
+}
+
+message ListGithubActionsConnectionsRequest {
+  // Number of connections to return per page. Maximum: 100. Default: 50.
+  optional int32 page_size = 1;
+  // Token to fetch the next page. Leave empty to fetch the first page.
+  optional string page_token = 2;
+}
+
+message ListGithubActionsConnectionsResponse {
+  // Connections in the authenticated organization. Provider credentials are never returned.
+  repeated GithubActionsConnection connections = 1;
+  // Token to fetch the next page. Empty when there are no more connections.
+  optional string next_page_token = 2;
+}
+
+message CreateGithubActionsInstallationUrlRequest {
+  // HTTPS URL to return to after GitHub completes installation. Leave empty to return to the Depot GitHub Actions page.
+  optional string return_url = 1;
+}
+
+message CreateGithubActionsInstallationUrlResponse {
+  // Short-lived GitHub App installation URL. The URL contains no GitHub provider credential.
+  string installation_url = 1;
+  // Time the URL expires, in RFC 3339 format.
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message DeleteGithubActionsConnectionRequest {
+  // Unique Depot identifier for the connection. Returned by `ListGithubActionsConnections`.
+  string connection_id = 1;
+}
+
+message DeleteGithubActionsConnectionResponse {
+  // Whether the connection was active before this request. False when it was already disconnected.
+  bool disconnected = 1;
+}
+
+message ListGithubActionsRepositoriesRequest {
+  // Unique Depot identifier for the connection. Returned by `ListGithubActionsConnections`.
+  string connection_id = 1;
+  // Case-insensitive repository-name search.
+  optional string query = 2;
+  // Number of repositories to return per page. Maximum: 250. Default: 100.
+  optional int32 page_size = 3;
+  // Token to fetch the next page. Leave empty to fetch the first page.
+  optional string page_token = 4;
+}
+
+message GithubActionsRepository {
+  // Repository name, in `owner/name` format.
+  string repository = 1;
+  // Whether the repository is private.
+  bool private = 2;
+}
+
+message ListGithubActionsRepositoriesResponse {
+  // Repositories visible to the GitHub App installation. Provider credentials are never returned.
+  repeated GithubActionsRepository repositories = 1;
+  // Token to fetch the next page. Empty when there are no more repositories.
+  optional string next_page_token = 2;
+  // Time repository access was last refreshed, in RFC 3339 format.
+  google.protobuf.Timestamp data_through = 3;
+}
+
+message GetGithubActionsTestResultsSummaryRequest {
+  // Connected GitHub repository containing the job, in `owner/name` format.
+  string repository = 1;
+  // Unique GitHub identifier for the job. Returned by `ListGithubActionsJobs`.
+  string job_id = 2;
+}
+
+message GithubActionsTestResultsSummary {
+  // Total number of test results.
+  int64 total = 1;
+  // Number of passed test results.
+  int64 passed = 2;
+  // Number of failed test results.
+  int64 failed = 3;
+  // Number of errored test results.
+  int64 errored = 4;
+  // Number of skipped test results.
+  int64 skipped = 5;
+  // Number of test results with an unknown status.
+  int64 unknown = 6;
+}
+
+message GetGithubActionsTestResultsSummaryResponse {
+  // Test-result counts for the job.
+  GithubActionsTestResultsSummary summary = 1;
+  // Owner type to pass to `depot.testresults.v1.TestResultsService.ListTestResults`.
+  string test_results_owner_type = 2;
+  // Owner identifier to pass to `depot.testresults.v1.TestResultsService.ListTestResults`.
+  string test_results_owner_id = 3;
+  // Latest time included in the response, in RFC 3339 format.
+  google.protobuf.Timestamp data_through = 4;
+}
+
+message GetGithubActionsUsageProjectionRequest {
+  // Billing-period window. Maximum: 366 days. Defaults to the organization's current billing period.
+  optional GithubActionsTimeRange time_range = 1;
+  // Connected repositories to include, in `owner/name` format. Leave empty to include every connected repository.
+  repeated string repositories = 2;
+}
+
+message GetGithubActionsUsageProjectionResponse {
+  // Inclusive start of the projection period, in RFC 3339 format.
+  google.protobuf.Timestamp period_start = 1;
+  // Exclusive end of the projection period, in RFC 3339 format.
+  google.protobuf.Timestamp period_end = 2;
+  // Time through which actual usage is included, in RFC 3339 format.
+  google.protobuf.Timestamp data_through = 3;
+  // Billable job time observed through `dataThrough`, in seconds.
+  int64 actual_billable_seconds = 4;
+  // Estimated billable job time for the complete period, in seconds.
+  int64 projected_billable_seconds = 5;
+  // Observed GitHub Actions cost through `dataThrough`, in the smallest unit of `currency`.
+  int64 actual_cost = 6;
+  // Estimated GitHub Actions cost for the complete period, in the smallest unit of `currency`.
+  int64 projected_cost = 7;
+  // ISO 4217 currency code for `actualCost` and `projectedCost`.
+  string currency = 8;
+  // Explanation of the projection method and known limitations.
+  string methodology = 9;
+}
