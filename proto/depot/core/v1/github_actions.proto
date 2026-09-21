@@ -30,6 +30,12 @@ service GithubActionsService {
   // Get time-bucketed GitHub Actions job and usage analytics.
   rpc GetGithubActionsAnalytics(GetGithubActionsAnalyticsRequest) returns (GetGithubActionsAnalyticsResponse) {}
 
+  // Get the duration distribution of finished GitHub Actions jobs.
+  rpc GetGithubActionsDurationDistribution(GetGithubActionsDurationDistributionRequest) returns (GetGithubActionsDurationDistributionResponse) {}
+
+  // List finished GitHub Actions job runs, longest duration first.
+  rpc ListGithubActionsJobRuns(ListGithubActionsJobRunsRequest) returns (ListGithubActionsJobRunsResponse) {}
+
   // List aggregate CPU, memory, duration, and failure analytics by job.
   rpc ListGithubActionsJobAnalytics(ListGithubActionsJobAnalyticsRequest) returns (ListGithubActionsJobAnalyticsResponse) {}
 
@@ -426,6 +432,66 @@ message ListGithubActionsJobAnalyticsResponse {
   // Per-job analytics ordered by descending job count, then repository, workflow, and job.
   repeated GithubActionsJobAnalytics jobs = 1;
   // Token to fetch the next page. Empty when there are no more job groups.
+  optional string next_page_token = 2;
+  // Latest time included in the response, in RFC 3339 format. Analytics can lag completed jobs by up to 15 minutes.
+  google.protobuf.Timestamp data_through = 3;
+}
+
+message GetGithubActionsDurationDistributionRequest {
+  // Job finish window. Maximum: 90 days. Default: the last 30 days.
+  optional GithubActionsTimeRange time_range = 1;
+  // Jobs to include. `filters.jobs` matches job display names, not workflow YAML job keys.
+  // Leave unset to include every job in the organization.
+  optional GithubActionsAnalyticsFilters filters = 2;
+}
+
+message GithubActionsDurationBucket {
+  // Duration range in minutes. Can be "0-1m", "1-5m", "5-10m", "10-20m", "20-30m", "30-60m", or ">60m".
+  // Lower bounds are exclusive and upper bounds are inclusive. Jobs with zero duration are excluded.
+  string label = 1;
+  // Number of stored job summaries in this range.
+  int64 job_count = 2;
+}
+
+message GetGithubActionsDurationDistributionResponse {
+  // Nonempty duration buckets, shortest range first.
+  repeated GithubActionsDurationBucket buckets = 1;
+  // Latest time included in the response, in RFC 3339 format. Analytics can lag completed jobs by up to 15 minutes.
+  google.protobuf.Timestamp data_through = 2;
+}
+
+message ListGithubActionsJobRunsRequest {
+  // Connected GitHub repository, in `owner/name` format.
+  string repository = 1;
+  // Job display name. Use the `name` returned by `ListGithubActionsJobs`, not a workflow YAML job key.
+  string job_name = 2;
+  // Job finish window. Use a UTC midnight-to-midnight range for one day's runs. Maximum: 90 days. Default: the last 30 days.
+  optional GithubActionsTimeRange time_range = 3;
+  // Number of runs to return per page. Maximum: 250. Default: 50.
+  optional int32 page_size = 4;
+  // Token to fetch the next page. Leave empty to fetch the first page. Keep repository, job name, and time range unchanged.
+  optional string page_token = 5;
+}
+
+message GithubActionsJobRun {
+  // Unique GitHub identifier for the job. Empty when it is unavailable in historical records.
+  string job_id = 1;
+  // Connected GitHub repository, in `owner/name` format.
+  string repository = 2;
+  // Job display name shown in GitHub.
+  string job_name = 3;
+  // Elapsed execution time, in seconds. Only runs with positive durations are returned.
+  int64 duration_seconds = 4;
+  // Time the job finished, in RFC 3339 format.
+  google.protobuf.Timestamp finished_at = 5;
+  // Recorded result. Can be "success", "failed", "failure", "cancelled", "skipped", "neutral", "action_required", or "timed_out".
+  string status = 6;
+}
+
+message ListGithubActionsJobRunsResponse {
+  // Stored job summaries ordered by duration, finish time, and record identifier, all descending.
+  repeated GithubActionsJobRun runs = 1;
+  // Token to fetch the next page. Empty when there are no more runs. Results can change as analytics are ingested.
   optional string next_page_token = 2;
   // Latest time included in the response, in RFC 3339 format. Analytics can lag completed jobs by up to 15 minutes.
   google.protobuf.Timestamp data_through = 3;
