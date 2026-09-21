@@ -440,7 +440,8 @@ message ListGithubActionsJobAnalyticsResponse {
 message GetGithubActionsDurationDistributionRequest {
   // Job finish window. Maximum: 90 days. Default: the last 30 days.
   optional GithubActionsTimeRange time_range = 1;
-  // Jobs to include. Leave unset to include every job in the organization.
+  // Jobs to include. `filters.jobs` matches job display names, not workflow YAML job keys.
+  // Leave unset to include every job in the organization.
   optional GithubActionsAnalyticsFilters filters = 2;
 }
 
