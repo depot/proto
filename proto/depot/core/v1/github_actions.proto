@@ -548,7 +548,8 @@ message GithubActionsRecommendation {
   double average_memory_utilization = 10;
   // Peak memory utilization, from 0 through 1.
   double peak_memory_utilization = 11;
-  // Number of jobs represented by the recommendation.
+  // Estimated number of distinct runners with CPU or memory utilization telemetry for this recommendation.
+  // Covers the whole UTC days touched by the requested time range, at the runner size being evaluated.
   int64 sample_size = 12;
 }
 
