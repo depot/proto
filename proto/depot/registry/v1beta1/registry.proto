@@ -18,6 +18,10 @@ service RegistryService {
   rpc GetRetentionPolicy(GetRetentionPolicyRequest) returns (GetRetentionPolicyResponse);
   rpc UpsertRetentionPolicy(UpsertRetentionPolicyRequest) returns (UpsertRetentionPolicyResponse);
   rpc DeleteRetentionPolicy(DeleteRetentionPolicyRequest) returns (DeleteRetentionPolicyResponse);
+  rpc ListUpstreamRegistries(ListUpstreamRegistriesRequest) returns (ListUpstreamRegistriesResponse);
+  rpc CreateUpstreamRegistry(CreateUpstreamRegistryRequest) returns (CreateUpstreamRegistryResponse);
+  rpc UpdateUpstreamRegistry(UpdateUpstreamRegistryRequest) returns (UpdateUpstreamRegistryResponse);
+  rpc DeleteUpstreamRegistry(DeleteUpstreamRegistryRequest) returns (DeleteUpstreamRegistryResponse);
 }
 
 enum RegistryAccessTokenPermission {
@@ -62,9 +66,19 @@ message RevokeTokenResponse {
 
 message CreateRepositoryRequest {
   string repository = 1;
+  // When set, the repository pulls through from an upstream registry.
+  optional RepositoryUpstream upstream = 2;
 }
 
-message CreateRepositoryResponse {}
+message RepositoryUpstream {
+  string upstream_registry_id = 1;
+  // Repository path in the upstream registry, such as `library/golang`.
+  string upstream_repository = 2;
+}
+
+message CreateRepositoryResponse {
+  optional UpstreamRepository upstream_repository = 1;
+}
 
 message ListRepositoriesRequest {
   int32 page = 1;
@@ -213,3 +227,69 @@ message DeleteRetentionPolicyRequest {
 }
 
 message DeleteRetentionPolicyResponse {}
+
+enum UpstreamRegistryAuthType {
+  UPSTREAM_REGISTRY_AUTH_TYPE_UNSPECIFIED = 0;
+  UPSTREAM_REGISTRY_AUTH_TYPE_BASIC = 1;
+  UPSTREAM_REGISTRY_AUTH_TYPE_ECR = 2;
+}
+
+// Credentials are write-only: responses report `hasPassword`, never the password.
+message UpstreamRegistry {
+  string id = 1;
+  string name = 2;
+  string upstream_url = 3;
+  string username = 4;
+  bool has_password = 5;
+  UpstreamRegistryAuthType auth_type = 6;
+  optional string role_arn = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message UpstreamRepository {
+  string id = 1;
+  string upstream_registry_id = 2;
+  string upstream_repository = 3;
+  // Local repository that pulls through from `upstreamRepository`.
+  string repository = 4;
+}
+
+message ListUpstreamRegistriesRequest {}
+
+message ListUpstreamRegistriesResponse {
+  repeated UpstreamRegistry upstream_registries = 1;
+}
+
+message CreateUpstreamRegistryRequest {
+  string name = 1;
+  string upstream_url = 2;
+  string username = 3;
+  string password = 4;
+  // Default: `UPSTREAM_REGISTRY_AUTH_TYPE_BASIC`. ECR requires `roleArn`.
+  UpstreamRegistryAuthType auth_type = 5;
+  optional string role_arn = 6;
+}
+
+message CreateUpstreamRegistryResponse {
+  UpstreamRegistry upstream_registry = 1;
+}
+
+// Unset fields are left unchanged.
+message UpdateUpstreamRegistryRequest {
+  string upstream_registry_id = 1;
+  optional string upstream_url = 2;
+  optional string username = 3;
+  optional string password = 4;
+  optional string role_arn = 5;
+}
+
+message UpdateUpstreamRegistryResponse {
+  UpstreamRegistry upstream_registry = 1;
+}
+
+message DeleteUpstreamRegistryRequest {
+  string upstream_registry_id = 1;
+}
+
+message DeleteUpstreamRegistryResponse {}
