@@ -22,8 +22,6 @@ service RegistryService {
   rpc CreateUpstreamRegistry(CreateUpstreamRegistryRequest) returns (CreateUpstreamRegistryResponse);
   rpc UpdateUpstreamRegistry(UpdateUpstreamRegistryRequest) returns (UpdateUpstreamRegistryResponse);
   rpc DeleteUpstreamRegistry(DeleteUpstreamRegistryRequest) returns (DeleteUpstreamRegistryResponse);
-  rpc ListUpstreamRepositories(ListUpstreamRepositoriesRequest) returns (ListUpstreamRepositoriesResponse);
-  rpc DeleteUpstreamRepository(DeleteUpstreamRepositoryRequest) returns (DeleteUpstreamRepositoryResponse);
 }
 
 enum RegistryAccessTokenPermission {
@@ -295,18 +293,3 @@ message DeleteUpstreamRegistryRequest {
 }
 
 message DeleteUpstreamRegistryResponse {}
-
-message ListUpstreamRepositoriesRequest {
-  string upstream_registry_id = 1;
-}
-
-message ListUpstreamRepositoriesResponse {
-  repeated UpstreamRepository upstream_repositories = 1;
-}
-
-// Removes the pull-through mapping; the local repository is kept.
-message DeleteUpstreamRepositoryRequest {
-  string upstream_repository_id = 1;
-}
-
-message DeleteUpstreamRepositoryResponse {}
