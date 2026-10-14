@@ -12,6 +12,9 @@ service GithubActionsService {
   // Get one GitHub Actions job.
   rpc GetGithubActionsJob(GetGithubActionsJobRequest) returns (GetGithubActionsJobResponse) {}
 
+  // Get CPU and memory samples and summary statistics for one GitHub Actions job. Execution windows longer than 7 days are rejected.
+  rpc GetGithubActionsJobMetrics(GetGithubActionsJobMetricsRequest) returns (GetGithubActionsJobMetricsResponse) {}
+
   // Terminate the compute resource for a queued or running GitHub Actions job.
   rpc TerminateGithubActionsJob(TerminateGithubActionsJobRequest) returns (TerminateGithubActionsJobResponse) {}
 
@@ -716,4 +719,87 @@ message GetGithubActionsUsageProjectionResponse {
   string currency = 8;
   // Explanation of the projection method and known limitations.
   string methodology = 9;
+}
+
+message GetGithubActionsJobMetricsRequest {
+  // Connected GitHub repository containing the job, in `owner/name` format.
+  string repository = 1;
+  // Unique GitHub identifier for the job. Returned by `ListGithubActionsJobs`.
+  string job_id = 2;
+}
+
+message GetGithubActionsJobMetricsResponse {
+  // Requested job, including its workflow, runner, and lifecycle details.
+  GithubActionsJob job = 1;
+  // Availability of the observed CPU and memory metrics. This does not guarantee coverage of the entire job.
+  GithubActionsMetricsAvailability availability = 2;
+  // Statistics across all observed per-second samples before downsampling.
+  GithubActionsMetricsStats stats = 3;
+  // Sample counts and downsampling details.
+  GithubActionsMetricsCapMetadata cap = 4;
+  // CPU and memory samples, ordered by timestamp. At most 5000 samples are returned.
+  repeated GithubActionsMetricSample samples = 5;
+  // Server time at which the metrics snapshot was captured, in RFC 3339 format. Metrics for running jobs are queried up to this time and can grow on subsequent calls.
+  google.protobuf.Timestamp snapshot_at = 6;
+}
+
+enum GithubActionsMetricsAvailabilityCode {
+  // Default value; not returned by the server.
+  GITHUB_ACTIONS_METRICS_AVAILABILITY_CODE_UNSPECIFIED = 0;
+  // CPU and memory metrics were observed. Samples may not cover the entire job.
+  GITHUB_ACTIONS_METRICS_AVAILABILITY_CODE_AVAILABLE = 1;
+  // Some CPU or memory metrics were observed, but one or more metric values are missing.
+  GITHUB_ACTIONS_METRICS_AVAILABILITY_CODE_PARTIAL = 2;
+  // No metrics are available for the job.
+  GITHUB_ACTIONS_METRICS_AVAILABILITY_CODE_UNAVAILABLE = 3;
+}
+
+message GithubActionsMetricsAvailability {
+  // Availability of the observed CPU and memory metrics.
+  GithubActionsMetricsAvailabilityCode code = 1;
+  // Reason metrics are missing. Can be "partial_metrics", "not_started", "no_samples", "missing_runner_identity", or "missing_time_range". Empty when metrics are available.
+  string reason = 2;
+}
+
+message GithubActionsMetricSample {
+  // Start of the sampled second, in RFC 3339 format.
+  google.protobuf.Timestamp timestamp = 1;
+  // CPU utilization in user mode, averaged across cores, as a fraction from 0 to 1. Unset when no CPU metric was observed in this second.
+  optional double cpu_utilization = 2;
+  // Used memory as a fraction of total memory from 0 to 1. Unset when no memory metric was observed in this second.
+  optional double memory_utilization = 3;
+}
+
+message GithubActionsMetricsStats {
+  // Number of sampled seconds with CPU or memory metrics before downsampling.
+  uint32 sample_count = 1;
+  // Number of sampled seconds with CPU metrics before downsampling.
+  uint32 cpu_sample_count = 2;
+  // Number of sampled seconds with memory metrics before downsampling.
+  uint32 memory_sample_count = 3;
+  // Peak observed CPU utilization in user mode, averaged across cores, as a fraction from 0 to 1. Unset when no CPU metrics were observed.
+  optional double peak_cpu_utilization = 4;
+  // Average observed CPU utilization in user mode, averaged across cores, as a fraction from 0 to 1. Unset when no CPU metrics were observed.
+  optional double average_cpu_utilization = 5;
+  // Peak observed used memory as a fraction of total memory from 0 to 1. Unset when no memory metrics were observed.
+  optional double peak_memory_utilization = 6;
+  // Average observed used memory as a fraction of total memory from 0 to 1. Unset when no memory metrics were observed.
+  optional double average_memory_utilization = 7;
+  // Timestamp of the first observed per-second sample, in RFC 3339 format. Unset when no samples were observed.
+  google.protobuf.Timestamp observed_started_at = 8;
+  // Timestamp of the last observed per-second sample, in RFC 3339 format. Unset when no samples were observed.
+  google.protobuf.Timestamp observed_finished_at = 9;
+}
+
+message GithubActionsMetricsCapMetadata {
+  // Number of observed per-second samples before downsampling.
+  uint32 raw_sample_count = 1;
+  // Number of samples returned in the response.
+  uint32 returned_sample_count = 2;
+  // Maximum number of samples returned in a response. Always 5000.
+  uint32 max_returned_sample_count = 3;
+  // True when the samples were reduced to fit `maxReturnedSampleCount`.
+  bool downsampled = 4;
+  // Downsampling strategy. "evenly_spaced" when downsampled; empty otherwise. The first and last samples are retained, but intermediate peaks may be omitted.
+  string downsample_strategy = 5;
 }
