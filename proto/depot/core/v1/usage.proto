@@ -41,9 +41,27 @@ message ProjectUsage {
   int32 layer_cache_size_gb = 4;
 }
 
+// Additional dimensions that subdivide GitHub Actions usage within each repository, workflow, and runner group.
+enum GithubActionsUsageDimension {
+  // Not a valid grouping dimension.
+  GITHUB_ACTIONS_USAGE_DIMENSION_UNSPECIFIED = 0;
+  // Branch recorded from the workflow-job webhook's head branch.
+  GITHUB_ACTIONS_USAGE_DIMENSION_BRANCH = 1;
+  // GitHub login of the workflow-job webhook sender, not the commit author.
+  GITHUB_ACTIONS_USAGE_DIMENSION_ACTOR = 2;
+  // Recorded job outcome, not the queued or running lifecycle state.
+  GITHUB_ACTIONS_USAGE_DIMENSION_STATUS = 3;
+}
+
 message GetUsageRequest {
   google.protobuf.Timestamp start_at = 1;
   google.protobuf.Timestamp end_at = 2;
+  // An array of additional dimensions to group GitHub Actions job usage by.
+  // Selected dimensions jointly subdivide the existing repository, workflow, and runner groups; repository totals are unchanged.
+  // Leave empty to keep the existing groups. Duplicate dimensions are ignored. Unspecified and unknown values are rejected.
+  // Grouped requests require a time range of at most 31 days and return at most 10,000 groups across all repositories.
+  // Requests exceeding the group limit fail instead of returning partial usage; narrow the time range and retry.
+  repeated GithubActionsUsageDimension github_actions_group_by = 3;
 }
 
 message GetUsageResponse {
@@ -53,6 +71,11 @@ message GetUsageResponse {
   repeated GithubActionsJobsUsage github_actions_jobs = 4;
   repeated StorageUsage storage = 5;
   repeated AgentSandboxUsage agent_sandbox = 6;
+  // An array of additional dimensions applied to GitHub Actions job usage.
+  // Contains each requested dimension once in enum order, including when no jobs match.
+  // For grouped requests, verify this matches the requested dimensions before using the results.
+  // Servers without grouping support omit this field. Empty when no additional grouping was requested.
+  repeated GithubActionsUsageDimension github_actions_group_by = 7;
 }
 
 message ContainerBuildUsage {
@@ -82,6 +105,16 @@ message GithubActionsJobUsageDetail {
   int32 job_count = 3;
   float minutes_elapsed = 4;
   float minutes_billed = 5;
+  // Branch recorded from the workflow-job webhook's head branch.
+  // Present only when branch grouping is requested. Empty when unavailable, including historical usage without this dimension.
+  optional string branch = 6;
+  // GitHub login of the workflow-job webhook sender, not the commit author.
+  // Present only when actor grouping is requested. Empty when unavailable, including historical usage without this dimension.
+  optional string actor = 7;
+  // Recorded job outcome, not the queued or running lifecycle state.
+  // For example, "success", "failure", "failed", or "cancelled"; "failed" includes failures recorded by Depot.
+  // Present only when status grouping is requested. Empty when unavailable.
+  optional string status = 8;
 }
 
 message StorageUsage {
@@ -93,5 +126,5 @@ message AgentSandboxUsage {
   string agent_type = 1;
   int32 sandboxes_count = 2;
   float minutes_elapsed = 3;
-  float minutes_billed = 4; 
+  float minutes_billed = 4;
 }
