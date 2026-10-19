@@ -1,0 +1,153 @@
+syntax = "proto3";
+
+package depot.core.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Finalized Stripe invoices for the subscription currently linked to the organization, including canceled subscriptions.
+// Requires an organization token or an organization owner's user token. Use the X-Depot-Org header to select an organization.
+// Other billing providers, previous subscriptions, and standalone invoices are not covered.
+service BillingService {
+  // Lists finalized invoices in reverse creation order. Draft invoices and upcoming estimates are excluded.
+  rpc ListInvoices(ListInvoicesRequest) returns (ListInvoicesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // Retrieves a finalized invoice, including its current payment and credit-note totals.
+  rpc GetInvoice(GetInvoiceRequest) returns (GetInvoiceResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // Lists a finalized invoice's line items. Follow every page to export the complete invoice.
+  rpc ListInvoiceLineItems(ListInvoiceLineItemsRequest) returns (ListInvoiceLineItemsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message ListInvoicesRequest {
+  // Maximum number of invoices to examine per page. Maximum: 100. Default: 50.
+  uint32 page_size = 1;
+  // Token to fetch the next page, returned as `nextPageToken`. Leave empty to fetch the first page.
+  string page_token = 2;
+}
+
+message ListInvoicesResponse {
+  // Finalized invoices in the page. May be empty when the page contains only draft invoices.
+  repeated Invoice invoices = 1;
+  // Token to fetch the next page. Empty when no more pages remain. Continue even when `invoices` is empty.
+  string next_page_token = 2;
+}
+
+message GetInvoiceRequest {
+  // Unique identifier for the invoice. Returned by `ListInvoices`.
+  string invoice_id = 1;
+}
+
+message GetInvoiceResponse {
+  // Finalized invoice belonging to the organization's linked subscription.
+  Invoice invoice = 1;
+}
+
+message ListInvoiceLineItemsRequest {
+  // Unique identifier for the invoice. Returned by `ListInvoices`.
+  string invoice_id = 1;
+  // Number of line items to return per page. Maximum: 100. Default: 50.
+  uint32 page_size = 2;
+  // Token to fetch the next page, returned as `nextPageToken`. Leave empty to fetch the first page.
+  string page_token = 3;
+}
+
+message ListInvoiceLineItemsResponse {
+  // Line items in the page, including negative adjustments.
+  repeated InvoiceLineItem line_items = 1;
+  // Token to fetch the next page. Empty when no more pages remain.
+  string next_page_token = 2;
+}
+
+// Finalized invoice amounts from Stripe, in the smallest currency unit. JSON encodes integer amounts as decimal strings.
+// Payment status, balances, and credit-note totals can change after finalization. No usage-based estimates are included.
+message Invoice {
+  // Unique identifier for the invoice.
+  string id = 1;
+  // Invoice number displayed on the invoice document. Unset when unavailable.
+  optional string number = 2;
+  // Current state of the invoice. Can be "open", "paid", "uncollectible", or "void".
+  string status = 3;
+  // Three-letter ISO currency code, in lowercase.
+  string currency = 4;
+  // Unique identifier for the Stripe subscription associated with the invoice.
+  string subscription_id = 5;
+  // Creation time, in RFC 3339 format.
+  google.protobuf.Timestamp created_at = 6;
+  // Finalization time, in RFC 3339 format.
+  google.protobuf.Timestamp finalized_at = 7;
+  // Start of the invoice's item accrual period, in RFC 3339 format. Use line item periods for service usage attribution.
+  google.protobuf.Timestamp period_start = 8;
+  // End of the invoice's item accrual period, in RFC 3339 format. May differ from individual line item service periods.
+  google.protobuf.Timestamp period_end = 9;
+  // Payment due time, in RFC 3339 format. Unset when no due date applies.
+  google.protobuf.Timestamp due_at = 10;
+  // Time the invoice became paid, in RFC 3339 format. Unset until paid.
+  google.protobuf.Timestamp paid_at = 11;
+  // Subtotal before invoice-level discounts and exclusive tax. Includes line-level discounts and inclusive tax.
+  int64 subtotal = 12;
+  // Total after discounts and tax, before customer balance application and credit notes.
+  int64 total = 13;
+  // Amount due after customer balance application, as reported by Stripe.
+  int64 amount_due = 14;
+  // Amount paid toward the invoice.
+  int64 amount_paid = 15;
+  // Amount remaining to be paid, as reported by Stripe.
+  int64 amount_remaining = 16;
+  // Customer balance before finalization. Negative values represent credit.
+  int64 starting_balance = 17;
+  // Customer balance after finalization. Negative values represent credit. Unset when unavailable.
+  optional int64 ending_balance = 18;
+  // Subtotal excluding tax. Unset when unavailable.
+  optional int64 subtotal_excluding_tax = 19;
+  // Total excluding tax. Unset when unavailable.
+  optional int64 total_excluding_tax = 20;
+  // Sum of discounts reported on the invoice. Already reflected in `total`.
+  int64 discount_amount = 21;
+  // Sum of inclusive and exclusive tax reported on the invoice. Already reflected in `total`.
+  int64 tax_amount = 22;
+  // Total of credit notes issued before payment. Does not change the original `total`.
+  int64 pre_payment_credit_notes_amount = 23;
+  // Total of credit notes issued after payment. Does not change the original `total`.
+  int64 post_payment_credit_notes_amount = 24;
+  // Stripe-hosted invoice page. Unset when unavailable. Treat this URL as confidential.
+  optional string hosted_invoice_url = 25;
+  // Invoice PDF download URL. Unset when unavailable. Treat this URL as confidential.
+  optional string pdf_url = 26;
+}
+
+// Invoice line item with signed amounts in the smallest currency unit. JSON encodes integer amounts as decimal strings.
+// Service periods can differ across lines; they do not establish that a usage report has identical totals.
+message InvoiceLineItem {
+  // Unique identifier for the line item.
+  string id = 1;
+  // Description shown on the invoice. Unset when unavailable.
+  optional string description = 2;
+  // Three-letter ISO currency code, in lowercase.
+  string currency = 3;
+  // Line amount before discounts and exclusive tax. Negative values represent adjustments.
+  int64 amount = 4;
+  // Line amount excluding tax and discounts. Unset when unavailable.
+  optional int64 amount_excluding_tax = 5;
+  // Billed quantity. Unset when unavailable.
+  optional int64 quantity = 6;
+  // Amount per unit excluding tax and discounts, preserving fractional precision. Unset when unavailable.
+  optional string unit_amount_decimal = 7;
+  // Start of the line item's service period, in RFC 3339 format.
+  google.protobuf.Timestamp period_start = 8;
+  // End of the line item's service period, in RFC 3339 format, using Stripe's inclusive end convention.
+  google.protobuf.Timestamp period_end = 9;
+  // Unique identifier for the Stripe price. Unset when no price applies.
+  optional string price_id = 10;
+  // Unique identifier for the Stripe product. Unset when no product applies.
+  optional string product_id = 11;
+  // Whether this line prorates a subscription change.
+  bool proration = 12;
+  // Sum of discounts applied to the line amount.
+  int64 discount_amount = 13;
+  // Sum of inclusive and exclusive tax reported on the line.
+  int64 tax_amount = 14;
+}
