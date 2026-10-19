@@ -250,8 +250,10 @@ message UpdateTrustPolicyRequest {
   string project_id = 1;
   // Unique identifier for the trust policy. Returned by `ListTrustPolicies` and `AddTrustPolicy`.
   string trust_policy_id = 2;
-  // Whether public pull requests from forks may use the GitHub trust policy. Only valid for GitHub policies.
+  // Whether public pull requests from forks may use the GitHub trust policy. Only valid for GitHub policies. Leave unset to keep the current setting.
   optional bool allow_public_pull_requests = 3;
+  // Whether only jobs on protected GitLab refs may use the trust policy. Only valid for GitLab policies. Set false to allow all refs. Leave unset to keep the current setting.
+  optional bool protected_refs_only = 4;
 }
 
 message UpdateTrustPolicyResponse {
@@ -310,6 +312,8 @@ message TrustPolicy {
     string namespace_id = 1;
     // Stable numeric GitLab project identifier.
     string project_id = 2;
+    // Whether only jobs on protected GitLab refs may use this trust policy. Default: false. Use `UpdateTrustPolicy` to change an existing policy.
+    bool protected_refs_only = 3;
   }
 }
 
