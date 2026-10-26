@@ -17,10 +17,6 @@ message ListProjectUsageRequest {
   google.protobuf.Timestamp end_at = 2;
   optional int32 page_size = 3;
   optional string page_token = 4;
-  // Include registry storage averaged over recorded daily snapshots in the requested period.
-  // Requires `startAt` and `endAt`, with `endAt` after `startAt` and a range of at most 366 days.
-  // Registry query failures fail the request instead of returning zero usage. Default: false.
-  bool include_registry_storage = 5;
 }
 
 message ListProjectUsageResponse {
@@ -32,10 +28,6 @@ message GetProjectUsageRequest {
   string project_id = 1;
   google.protobuf.Timestamp start_at = 2;
   google.protobuf.Timestamp end_at = 3;
-  // Include registry storage averaged over recorded daily snapshots in the requested period.
-  // Requires `startAt` and `endAt`, with `endAt` after `startAt` and a range of at most 366 days.
-  // Registry query failures fail the request instead of returning zero usage. Default: false.
-  bool include_registry_storage = 4;
 }
 
 message GetProjectUsageResponse {
@@ -50,7 +42,9 @@ message ProjectUsage {
   // Average registry storage in GB across the project's recorded daily snapshots in the requested period.
   // Matches the dashboard's per-project breakdown and accounts for shared layers within the repository.
   // Days without snapshots are excluded from the average. Zero when no snapshots exist.
-  // Present only when `includeRegistryStorage` is true and the server supports this field.
+  // Included automatically for positive time ranges of at most 366 days when registry data is available.
+  // Omitted for other ranges, on registry failures or timeouts, and by servers without support.
+  // An absent value means unavailable, not zero; existing usage fields are still returned.
   // This snapshot average is not the time-weighted organization-wide billing total.
   optional double registry_storage_size_gb = 5;
 }
