@@ -9,10 +9,10 @@ service GithubActionsService {
   // List GitHub Actions jobs, newest first.
   rpc ListGithubActionsJobs(ListGithubActionsJobsRequest) returns (ListGithubActionsJobsResponse) {}
 
-  // Get one GitHub Actions job.
+  // Get one GitHub Actions job and observed out-of-memory kills. Execution windows longer than 7 days are rejected.
   rpc GetGithubActionsJob(GetGithubActionsJobRequest) returns (GetGithubActionsJobResponse) {}
 
-  // Get CPU and memory samples and summary statistics for one GitHub Actions job. Execution windows longer than 7 days are rejected.
+  // Get CPU and memory samples, summary statistics, and observed out-of-memory kills for one GitHub Actions job. Execution windows longer than 7 days are rejected.
   rpc GetGithubActionsJobMetrics(GetGithubActionsJobMetricsRequest) returns (GetGithubActionsJobMetricsResponse) {}
 
   // Terminate the compute resource for a queued or running GitHub Actions job.
@@ -171,6 +171,8 @@ message GetGithubActionsJobRequest {
 message GetGithubActionsJobResponse {
   // Requested job.
   GithubActionsJob job = 1;
+  // Observed out-of-memory kills on the runner during this job's execution.
+  GithubActionsJobOOM oom = 2;
 }
 
 message TerminateGithubActionsJobRequest {
@@ -741,6 +743,28 @@ message GetGithubActionsJobMetricsResponse {
   repeated GithubActionsMetricSample samples = 5;
   // Server time at which the metrics snapshot was captured, in RFC 3339 format. Metrics for running jobs are queried up to this time and can grow on subsequent calls.
   google.protobuf.Timestamp snapshot_at = 6;
+  // Observed out-of-memory kills, independent of CPU and memory sample availability.
+  GithubActionsJobOOM oom = 7;
+}
+
+message GithubActionsJobOOM {
+  // True when at least one kernel out-of-memory kill was observed on the runner during the job. False means none were observed, not that an out-of-memory condition is ruled out. Events can arrive after the job finishes. Unset when the lookup is unavailable.
+  optional bool detected = 1;
+  // Reason the lookup is unavailable. Can be "not_started", "missing_runner_identity", or "missing_time_range". Empty when the lookup completed.
+  string unavailable_reason = 2;
+  // Observed kills, ordered by timestamp. At most 100 events are returned. Empty when none were observed or the lookup is unavailable.
+  repeated GithubActionsJobOOMEvent events = 3;
+  // True when more than 100 events were observed and only the first 100 are returned.
+  bool truncated = 4;
+}
+
+message GithubActionsJobOOMEvent {
+  // Time the kernel reported the kill, in RFC 3339 format.
+  google.protobuf.Timestamp timestamp = 1;
+  // Identifier of the killed process.
+  uint32 process_pid = 2;
+  // Name of the killed process, limited to 256 characters.
+  string process_name = 3;
 }
 
 enum GithubActionsMetricsAvailabilityCode {
