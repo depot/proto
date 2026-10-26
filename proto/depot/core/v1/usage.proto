@@ -39,6 +39,14 @@ message ProjectUsage {
   int32 build_count = 2;
   int32 build_duration_seconds = 3;
   int32 layer_cache_size_gb = 4;
+  // Average registry storage in GB across the project's recorded daily snapshots in the requested period.
+  // Matches the dashboard's per-project breakdown and accounts for shared layers within the repository.
+  // Days without snapshots are excluded from the average. Zero when no snapshots exist.
+  // Included automatically for positive time ranges of at most 366 days when registry data is available.
+  // Omitted for other ranges, on registry failures or timeouts, and by servers without support.
+  // An absent value means unavailable, not zero; existing usage fields are still returned.
+  // This snapshot average is not the time-weighted organization-wide billing total.
+  optional double registry_storage_size_gb = 5;
 }
 
 // Additional dimensions that subdivide GitHub Actions usage within each repository, workflow, and runner group.
