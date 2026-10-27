@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package depot.core.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Organization billing information. Requires an organization token; read-only organization tokens are supported.
+service CreditService {
+  // Read the posted invoice-credit balance for the authenticated organization.
+  // Available for organizations billed through Stripe. Unbilled usage is not deducted.
+  rpc GetCreditBalance(GetCreditBalanceRequest) returns (GetCreditBalanceResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message GetCreditBalanceRequest {}
+
+message GetCreditBalanceResponse {
+  // Available invoice credit in the currency's smallest unit. For example, 1250 means USD 12.50.
+  // Always present, including zero when there is no credit or the account has a debit balance.
+  // Includes promotional, prepaid, and adjustment credits posted to the invoice balance.
+  // Excludes unbilled usage, free-trial allowances, included plan minutes, and cash balances.
+  optional int64 remaining_credit_minor = 1;
+  // Three-letter ISO 4217 currency code for `remainingCreditMinor`. For example, "USD".
+  string currency = 2;
+  // Time the balance was read from the billing provider, in RFC 3339 format.
+  // This is not a usage-processing watermark; usage affects credit when invoices are finalized.
+  google.protobuf.Timestamp observed_at = 3;
+}
