@@ -22,12 +22,12 @@ service BuildService {
 
   // Export resource utilization for completed builds, newest first. Requires organization read access.
   // Only measurements attributable to each selected build may be returned; host-wide metrics are never substituted.
-  // Returns FailedPrecondition until build-attributed resource collection is available.
+  // Missing or unsupported collection returns zero sample counts and absent utilization values.
   rpc ListBuildMetrics(ListBuildMetricsRequest) returns (ListBuildMetricsResponse);
 
   // Summarize resource utilization attributable only to the selected completed builds. Requires organization read access.
-  // Host processes and other builds must not contribute to these statistics, even when they share a machine.
-  // Returns FailedPrecondition until build-attributed resource collection is available.
+  // Includes only executor cgroups attributed to the selected builds. Excludes host processes and other builds.
+  // Missing or unsupported collection returns zero sample counts and absent utilization values.
   rpc GetProjectBuildMetrics(GetProjectBuildMetricsRequest) returns (GetProjectBuildMetricsResponse);
 }
 
@@ -68,8 +68,8 @@ message GetProjectBuildMetricsResponse {
   uint32 build_count = 1;
   // Number of selected builds without a recorded machine association.
   uint32 builds_without_machines = 2;
-  // Statistics over measurements attributable only to the selected builds, weighted by observed build-machine-seconds.
-  // Concurrent builds retain separate measurements. Do not average summaries without their sample counts.
+  // Statistics over measurements attributable only to the selected builds, weighted by observed interval duration.
+  // Concurrent builds retain separate measurements. Combine averages using their observed durations, not sample counts.
   BuildResourceStatistics statistics = 3;
   // Statistics for each architecture with a recorded machine association.
   repeated BuildArchitectureMetrics architectures = 4;
@@ -101,30 +101,44 @@ message BuildMachineMetrics {
   google.protobuf.Timestamp end_at = 4;
   // Statistics over build-attributed telemetry only. Zero sample counts mean no data, not zero utilization.
   BuildResourceStatistics statistics = 5;
+  // Machine CPU capacity observed by the collector. Unset without telemetry or when capacity varied.
+  optional uint32 cpu_capacity = 6;
+  // Machine memory capacity observed by the collector, in bytes. Unset without telemetry or when capacity varied.
+  optional double memory_capacity_bytes = 7;
 }
 
 message BuildArchitectureMetrics {
   // Machine architecture. Can be "amd64" or "arm64".
   string architecture = 1;
-  // Statistics across observed build-machine-seconds for this architecture.
+  // Statistics across observed collection intervals for this architecture.
   BuildResourceStatistics statistics = 2;
 }
 
 message BuildResourceStatistics {
-  // Number of build-machine-seconds with CPU measurements attributable to the build.
+  // Number of distinct collection intervals with CPU measurements attributable to the build.
   uint32 cpu_sample_count = 1;
-  // Mean CPU utilization attributable to the build as a fraction of allocated CPU capacity, from 0 to 1.
-  // Each observed build-machine-second is weighted equally. Unset without CPU samples.
+  // Mean CPU utilization attributable to the build as a fraction of the collector's observed machine CPU capacity, from 0 to 1.
+  // Weighted by observed interval duration. Includes user and kernel CPU. Unset without CPU samples.
   optional double average_cpu_utilization = 2;
-  // Highest build-attributed CPU utilization for any build-machine-second. Unset without CPU samples.
+  // Highest build-attributed CPU utilization for any collection interval. Unset without CPU samples.
   optional double peak_cpu_utilization = 3;
-  // Number of build-machine-seconds with memory measurements attributable to the build.
+  // Number of distinct collection intervals with memory measurements attributable to the build.
   uint32 memory_sample_count = 4;
-  // Mean memory utilization attributable to the build as a fraction of allocated memory, from 0 to 1.
-  // Each observed build-machine-second is weighted equally. Unset without memory samples.
+  // Mean memory utilization attributable to the build as a fraction of the collector's observed machine memory capacity, from 0 to 1.
+  // Duration-weighted mean of each interval's highest sampled sum of executor memory. Unset without memory samples.
   optional double average_memory_utilization = 5;
-  // Highest build-attributed memory utilization for any build-machine-second. Unset without memory samples.
+  // Highest build-attributed memory utilization for any collection interval. Unset without memory samples.
   optional double peak_memory_utilization = 6;
+  // Total duration of intervals with CPU observations, in seconds. Concurrent machines and builds contribute separately.
+  double cpu_observed_seconds = 7;
+  // Total duration of intervals with memory observations, in seconds.
+  double memory_observed_seconds = 8;
+  // Duration-weighted mean of the highest sampled executor memory per interval, in bytes. Unset without memory samples.
+  optional double average_memory_bytes = 9;
+  // Highest sampled sum of executor cgroup memory, in bytes. Unset without memory samples.
+  optional double peak_memory_bytes = 10;
+  // CPU time consumed by the observed executor cgroups, in seconds. Unset without CPU samples.
+  optional double cpu_time_seconds = 11;
 }
 
 message ShareBuildRequest {
