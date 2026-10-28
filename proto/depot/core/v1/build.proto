@@ -21,14 +21,13 @@ service BuildService {
   rpc CancelBuild(CancelBuildRequest) returns (CancelBuildResponse);
 
   // Export resource utilization for completed builds, newest first. Requires organization read access.
-  // Metrics describe shared builder machines, not resources attributable exclusively to one build.
-  // More than 2,000 machine associations or a telemetry span exceeding seven days returns ResourceExhausted.
+  // Only measurements attributable to each selected build may be returned; host-wide metrics are never substituted.
+  // Returns FailedPrecondition until build-attributed resource collection is available.
   rpc ListBuildMetrics(ListBuildMetricsRequest) returns (ListBuildMetricsResponse);
 
-  // Summarize resource utilization across completed builds, counting overlapping machine samples once.
-  // Requires organization read access. More than 1,000 builds or 2,000 machine associations returns ResourceExhausted;
-  // request a smaller completion-time range in that case. A telemetry span exceeding seven days also returns
-  // ResourceExhausted. Store failures never return partial statistics.
+  // Summarize resource utilization attributable only to the selected completed builds. Requires organization read access.
+  // Host processes and other builds must not contribute to these statistics, even when they share a machine.
+  // Returns FailedPrecondition until build-attributed resource collection is available.
   rpc GetProjectBuildMetrics(GetProjectBuildMetricsRequest) returns (GetProjectBuildMetricsResponse);
 }
 
@@ -69,9 +68,8 @@ message GetProjectBuildMetricsResponse {
   uint32 build_count = 1;
   // Number of selected builds without a recorded machine association.
   uint32 builds_without_machines = 2;
-  // Statistics across unique machine-seconds within the selected builds' machine-association windows.
-  // Overlapping builds sharing a machine contribute each sample once. Separate requests can still overlap;
-  // do not sum their statistics or average their averages to obtain a combined project summary.
+  // Statistics over measurements attributable only to the selected builds, weighted by observed build-machine-seconds.
+  // Concurrent builds retain separate measurements. Do not average summaries without their sample counts.
   BuildResourceStatistics statistics = 3;
   // Statistics for each architecture with a recorded machine association.
   repeated BuildArchitectureMetrics architectures = 4;
@@ -87,9 +85,8 @@ message BuildResourceMetrics {
   // Hardware recorded on the build. Empty when unknown; does not prove the capacity of each associated machine.
   string hardware = 4;
   // Statistics per associated machine, including machines without telemetry. Empty when no machine was recorded.
-  // Samples cover each association's start through build completion, with an exclusive end. A reassigned machine's
-  // window ends at the next association for that architecture. Usage can include concurrent builds and host processes.
-  // A telemetry span exceeding seven days returns ResourceExhausted rather than truncated statistics.
+  // Each measurement must be attributable to this build on that machine. Host-wide samples are excluded,
+  // including samples taken when no concurrent build was recorded.
   repeated BuildMachineMetrics machines = 5;
 }
 
@@ -102,31 +99,31 @@ message BuildMachineMetrics {
   google.protobuf.Timestamp start_at = 3;
   // Exclusive end of the observed association window, in RFC 3339 format.
   google.protobuf.Timestamp end_at = 4;
-  // Statistics over available telemetry. Zero sample counts mean no data, not zero utilization.
+  // Statistics over build-attributed telemetry only. Zero sample counts mean no data, not zero utilization.
   BuildResourceStatistics statistics = 5;
 }
 
 message BuildArchitectureMetrics {
   // Machine architecture. Can be "amd64" or "arm64".
   string architecture = 1;
-  // Statistics across unique machine-seconds for this architecture.
+  // Statistics across observed build-machine-seconds for this architecture.
   BuildResourceStatistics statistics = 2;
 }
 
 message BuildResourceStatistics {
-  // Number of machine-seconds with CPU measurements, after deduplicating each core's samples within each second.
+  // Number of build-machine-seconds with CPU measurements attributable to the build.
   uint32 cpu_sample_count = 1;
-  // Mean user-mode CPU utilization as a fraction from 0 to 1. Each machine-second is weighted equally;
-  // each observed core within that second is weighted equally. Excludes system CPU time. Unset without CPU samples.
+  // Mean CPU utilization attributable to the build as a fraction of allocated CPU capacity, from 0 to 1.
+  // Each observed build-machine-second is weighted equally. Unset without CPU samples.
   optional double average_cpu_utilization = 2;
-  // Highest per-machine, per-second mean CPU utilization. Unset without CPU samples.
+  // Highest build-attributed CPU utilization for any build-machine-second. Unset without CPU samples.
   optional double peak_cpu_utilization = 3;
-  // Number of machine-seconds with used-memory utilization measurements.
+  // Number of build-machine-seconds with memory measurements attributable to the build.
   uint32 memory_sample_count = 4;
-  // Mean used-memory utilization as a fraction from 0 to 1, weighted equally per machine-second.
-  // Unset without memory samples. Memory bytes and historical capacity cannot be inferred from this value alone.
+  // Mean memory utilization attributable to the build as a fraction of allocated memory, from 0 to 1.
+  // Each observed build-machine-second is weighted equally. Unset without memory samples.
   optional double average_memory_utilization = 5;
-  // Highest used-memory utilization for any machine-second. Unset without memory samples.
+  // Highest build-attributed memory utilization for any build-machine-second. Unset without memory samples.
   optional double peak_memory_utilization = 6;
 }
 
