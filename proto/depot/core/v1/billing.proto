@@ -4,9 +4,10 @@ package depot.core.v1;
 
 import "google/protobuf/timestamp.proto";
 
-// Finalized Stripe invoices for the subscription currently linked to the organization, including canceled subscriptions.
+// Finalized Stripe invoices for the customer currently linked to the organization, matching the billing portal.
 // Requires an organization token or an organization owner's user token. Use the X-Depot-Org header to select an organization.
-// Other billing providers, previous subscriptions, and standalone invoices are not covered.
+// Includes previous subscriptions and standalone invoices. Organizations sharing a Stripe customer share its invoice history.
+// Other billing providers and invoices belonging to a different Stripe customer are not covered.
 service BillingService {
   // Lists finalized invoices in reverse creation order. Draft invoices and upcoming estimates are excluded.
   rpc ListInvoices(ListInvoicesRequest) returns (ListInvoicesResponse) {
@@ -42,7 +43,7 @@ message GetInvoiceRequest {
 }
 
 message GetInvoiceResponse {
-  // Finalized invoice belonging to the organization's linked subscription.
+  // Finalized invoice belonging to the organization's linked Stripe customer.
   Invoice invoice = 1;
 }
 
@@ -73,7 +74,7 @@ message Invoice {
   string status = 3;
   // Three-letter ISO currency code, in lowercase.
   string currency = 4;
-  // Unique identifier for the Stripe subscription associated with the invoice.
+  // Unique identifier for the Stripe subscription associated with the invoice. Empty for standalone invoices.
   string subscription_id = 5;
   // Creation time, in RFC 3339 format.
   google.protobuf.Timestamp created_at = 6;
