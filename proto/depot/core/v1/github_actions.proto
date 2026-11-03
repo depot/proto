@@ -235,6 +235,13 @@ message GithubActionsLogLine {
   string body = 10;
 }
 
+// Presentation order for matching log lines. Latest-copy selection is independent of this order.
+enum GithubActionsLogResultOrder {
+  GITHUB_ACTIONS_LOG_RESULT_ORDER_UNSPECIFIED = 0;
+  GITHUB_ACTIONS_LOG_RESULT_ORDER_DESCENDING = 1;
+  GITHUB_ACTIONS_LOG_RESULT_ORDER_ASCENDING = 2;
+}
+
 message SearchGithubActionsLogsRequest {
   // Text to match in log bodies. Empty text returns unfiltered log lines.
   string query = 1;
@@ -244,12 +251,14 @@ message SearchGithubActionsLogsRequest {
   optional GithubActionsLogFilters filters = 3;
   // Number of matching lines to return per page. Maximum: 1000. Default: 100.
   optional int32 page_size = 4;
-  // Token to fetch the next page. Leave empty to fetch the first page. Keep the query, filters, and `timeRange` unchanged between pages.
+  // Token to fetch the next page. Leave empty to fetch the first page. Keep the query, filters, `timeRange`, and effective `order` unchanged between pages.
   optional string page_token = 5;
+  // Direction for timestamp and all tie breakers: compute identifier, step identifier, and line number. Unspecified and descending are equivalent. Default: DESCENDING.
+  GithubActionsLogResultOrder order = 6;
 }
 
 message SearchGithubActionsLogsResponse {
-  // Log lines matching the request, newest first.
+  // Log lines matching the request, in the requested order.
   repeated GithubActionsLogLine lines = 1;
   // Token to fetch the next page. Empty when there are no more matching lines.
   optional string next_page_token = 2;
