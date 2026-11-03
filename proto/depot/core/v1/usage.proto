@@ -84,6 +84,11 @@ message GetUsageResponse {
   // For grouped requests, verify this matches the requested dimensions before using the results.
   // Servers without grouping support omit this field. Empty when no additional grouping was requested.
   repeated GithubActionsUsageDimension github_actions_group_by = 7;
+  // Depot CI sandbox compute, one entry per repository, workflow, and runner.
+  // Matches the "Sandbox compute (Depot CI)" section of the dashboard's usage CSV export.
+  // Covers only job attempts that finished on or after 2026-05-22, when this usage tracking started.
+  // Servers without Depot CI usage support omit this field.
+  repeated DepotCIUsage depot_ci = 8;
 }
 
 message ContainerBuildUsage {
@@ -135,4 +140,25 @@ message AgentSandboxUsage {
   int32 sandboxes_count = 2;
   float minutes_elapsed = 3;
   float minutes_billed = 4;
+}
+
+// DepotCIUsage is the Depot CI sandbox compute for one repository, workflow, and runner
+// over the specified period of time.
+message DepotCIUsage {
+  // Repository the workflow ran in, as "owner/name". Usage from before a repository rename is reported under its current name.
+  string repo = 1;
+  // Display name of the workflow. Falls back to `workflowPath` when the workflow has no name.
+  string workflow = 2;
+  // Workflow file path. For example, ".depot/workflows/ci.yml". Empty when unavailable.
+  string workflow_path = 3;
+  // Runner the job requested in its `runs-on` configuration, not the machine each attempt was placed on.
+  // For example, "depot-ubuntu-24.04" or "depot-ubuntu-24.04 (4 vCPU, 8 GB)". "Unknown" when the configuration could not be resolved.
+  string runner = 4;
+  // Number of job attempts that finished in the period. Each retry counts as a separate attempt.
+  int32 attempt_count = 5;
+  // Wall-clock minutes the job attempts ran, rounded to two decimal places.
+  double minutes_elapsed = 6;
+  // Billed vCPU-minutes, rounded to two decimal places.
+  // Unlike GitHub Actions `minutesBilled`, which counts 2-vCPU-equivalent minutes, a 2 vCPU sandbox running for 10 minutes bills 20 vCPU-minutes.
+  double vcpu_minutes_billed = 7;
 }
