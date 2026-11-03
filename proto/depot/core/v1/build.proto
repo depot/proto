@@ -19,6 +19,126 @@ service BuildService {
   // Request cancellation of a build. Execution stops asynchronously; use `GetBuild` to observe the final outcome.
   // Requires an organization credential with write access. Repeated requests are safe.
   rpc CancelBuild(CancelBuildRequest) returns (CancelBuildResponse);
+
+  // Export resource utilization for completed builds, newest first. Requires organization read access.
+  // Only measurements attributable to each selected build may be returned; host-wide metrics are never substituted.
+  // Missing or unsupported collection returns zero sample counts and absent utilization values.
+  rpc ListBuildMetrics(ListBuildMetricsRequest) returns (ListBuildMetricsResponse);
+
+  // Summarize resource utilization attributable only to the selected completed builds. Requires organization read access.
+  // Includes only executor cgroups attributed to the selected builds. Excludes host processes and other builds.
+  // Missing or unsupported collection returns zero sample counts and absent utilization values.
+  rpc GetProjectBuildMetrics(GetProjectBuildMetricsRequest) returns (GetProjectBuildMetricsResponse);
+}
+
+message ListBuildMetricsRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `GetProject`.
+  string project_id = 1;
+  // Inclusive lower bound on build completion time, in RFC 3339 format. Required, with millisecond precision.
+  google.protobuf.Timestamp start_at = 2;
+  // Exclusive upper bound on build completion time, in RFC 3339 format. Required, with millisecond precision.
+  // Must follow `startAt`, must not be in the future, and must be at most seven days after `startAt`.
+  google.protobuf.Timestamp end_at = 3;
+  // Number of builds to return per page. Maximum: 50. Default: 20.
+  int32 page_size = 4;
+  // Token to fetch the next page. Leave empty to fetch the first page. Keep the project and time range unchanged.
+  string page_token = 5;
+}
+
+message ListBuildMetricsResponse {
+  // Completed builds, ordered by completion time and build identifier, both descending.
+  // Pagination is not a database snapshot; records and late-arriving telemetry may change between requests.
+  repeated BuildResourceMetrics builds = 1;
+  // Token to fetch the next page. Empty when there are no more builds.
+  string next_page_token = 2;
+}
+
+message GetProjectBuildMetricsRequest {
+  // Unique identifier for the project. Returned by `ListProjects` and `GetProject`.
+  string project_id = 1;
+  // Inclusive lower bound on build completion time, in RFC 3339 format. Required, with millisecond precision.
+  google.protobuf.Timestamp start_at = 2;
+  // Exclusive upper bound on build completion time, in RFC 3339 format. Required, with millisecond precision.
+  // Must follow `startAt`, must not be in the future, and must be at most seven days after `startAt`.
+  google.protobuf.Timestamp end_at = 3;
+}
+
+message GetProjectBuildMetricsResponse {
+  // Number of completed builds selected, including builds without telemetry.
+  uint32 build_count = 1;
+  // Number of selected builds without a recorded machine association.
+  uint32 builds_without_machines = 2;
+  // Statistics over measurements attributable only to the selected builds, weighted by observed interval duration.
+  // Concurrent builds retain separate measurements. Combine averages using their observed durations, not sample counts.
+  BuildResourceStatistics statistics = 3;
+  // Statistics for each architecture with a recorded machine association.
+  repeated BuildArchitectureMetrics architectures = 4;
+}
+
+message BuildResourceMetrics {
+  // Unique identifier for the build. Use with `GetBuild` for additional metadata.
+  string build_id = 1;
+  // Build creation time, in RFC 3339 format.
+  google.protobuf.Timestamp created_at = 2;
+  // Build completion time, in RFC 3339 format.
+  google.protobuf.Timestamp finished_at = 3;
+  // Hardware recorded on the build. Empty when unknown; does not prove the capacity of each associated machine.
+  string hardware = 4;
+  // Statistics per associated machine, including machines without telemetry. Empty when no machine was recorded.
+  // Each measurement must be attributable to this build on that machine. Host-wide samples are excluded,
+  // including samples taken when no concurrent build was recorded.
+  repeated BuildMachineMetrics machines = 5;
+}
+
+message BuildMachineMetrics {
+  // Unique identifier for the builder machine.
+  string machine_id = 1;
+  // Machine architecture. Can be "amd64" or "arm64".
+  string architecture = 2;
+  // Beginning of the observed association window, in RFC 3339 format.
+  google.protobuf.Timestamp start_at = 3;
+  // Exclusive end of the observed association window, in RFC 3339 format.
+  google.protobuf.Timestamp end_at = 4;
+  // Statistics over build-attributed telemetry only. Zero sample counts mean no data, not zero utilization.
+  BuildResourceStatistics statistics = 5;
+  // Machine CPU capacity observed by the collector. Unset without telemetry or when capacity varied.
+  optional uint32 cpu_capacity = 6;
+  // Machine memory capacity observed by the collector, in bytes. Unset without telemetry or when capacity varied.
+  optional double memory_capacity_bytes = 7;
+}
+
+message BuildArchitectureMetrics {
+  // Machine architecture. Can be "amd64" or "arm64".
+  string architecture = 1;
+  // Statistics across observed collection intervals for this architecture.
+  BuildResourceStatistics statistics = 2;
+}
+
+message BuildResourceStatistics {
+  // Number of distinct collection intervals with CPU measurements attributable to the build.
+  uint32 cpu_sample_count = 1;
+  // Mean CPU utilization attributable to the build as a fraction of the collector's observed machine CPU capacity, from 0 to 1.
+  // Weighted by observed interval duration. Includes user and kernel CPU. Unset without CPU samples.
+  optional double average_cpu_utilization = 2;
+  // Highest build-attributed CPU utilization for any collection interval. Unset without CPU samples.
+  optional double peak_cpu_utilization = 3;
+  // Number of distinct collection intervals with memory measurements attributable to the build.
+  uint32 memory_sample_count = 4;
+  // Mean memory utilization attributable to the build as a fraction of the collector's observed machine memory capacity, from 0 to 1.
+  // Duration-weighted mean of each interval's highest sampled sum of executor memory. Unset without memory samples.
+  optional double average_memory_utilization = 5;
+  // Highest build-attributed memory utilization for any collection interval. Unset without memory samples.
+  optional double peak_memory_utilization = 6;
+  // Total duration of intervals with CPU observations, in seconds. Concurrent machines and builds contribute separately.
+  double cpu_observed_seconds = 7;
+  // Total duration of intervals with memory observations, in seconds.
+  double memory_observed_seconds = 8;
+  // Duration-weighted mean of the highest sampled executor memory per interval, in bytes. Unset without memory samples.
+  optional double average_memory_bytes = 9;
+  // Highest sampled sum of executor cgroup memory, in bytes. Unset without memory samples.
+  optional double peak_memory_bytes = 10;
+  // CPU time consumed by the observed executor cgroups, in seconds. Unset without CPU samples.
+  optional double cpu_time_seconds = 11;
 }
 
 message ShareBuildRequest {
