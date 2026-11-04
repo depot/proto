@@ -210,6 +210,9 @@ message GithubActionsLogFilters {
   repeated string actions = 4;
   // Unique compute identifier to match. Leave empty to include every compute resource.
   optional string compute_id = 5;
+  // Exact step identifier returned as `GithubActionsLogLine.stepId` by `SearchGithubActionsLogs`.
+  // Leave unset to include every step. An empty string matches job-level output.
+  optional string step_id = 6;
 }
 
 message GithubActionsLogLine {
