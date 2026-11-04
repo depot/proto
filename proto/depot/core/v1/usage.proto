@@ -161,4 +161,13 @@ message DepotCIUsage {
   // Billed vCPU-minutes, rounded to two decimal places.
   // Unlike GitHub Actions `minutesBilled`, which counts 2-vCPU-equivalent minutes, a 2 vCPU sandbox running for 10 minutes bills 20 vCPU-minutes.
   double vcpu_minutes_billed = 7;
+  // Number of finished job attempts with a failure outcome in this repository, workflow, and runner group.
+  // Each failed retry counts separately. Canceled and other non-failure outcomes are excluded.
+  // Omitted by servers without error-rate support; zero means no failed attempts.
+  optional int32 failed_attempt_count = 8;
+  // Fraction of finished job attempts that failed, from 0 to 1, without decimal rounding.
+  // Calculated as `failedAttemptCount` / `attemptCount`, including canceled and other non-failure outcomes in the denominator.
+  // To combine runner groups for a workflow, divide the sum of `failedAttemptCount` by the sum of `attemptCount`.
+  // Omitted by servers without error-rate support; zero means no failed attempts.
+  optional double error_rate = 9;
 }
