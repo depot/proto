@@ -87,6 +87,8 @@ message GetUsageResponse {
   // Depot CI sandbox compute, one entry per repository, workflow, and runner.
   // Matches the "Sandbox compute (Depot CI)" section of the dashboard's usage CSV export.
   // Covers only job attempts that finished on or after 2026-05-22, when this usage tracking started.
+  // Includes only attempts that started and have recorded sandbox usage, including records with zero vCPU-minutes.
+  // Attempts canceled or failed before starting are excluded. Delayed usage records appear after they are recorded.
   // Servers without Depot CI usage support omit this field.
   repeated DepotCIUsage depot_ci = 8;
 }
@@ -154,19 +156,21 @@ message DepotCIUsage {
   // Runner the job requested in its `runs-on` configuration, not the machine each attempt was placed on.
   // For example, "depot-ubuntu-24.04" or "depot-ubuntu-24.04 (4 vCPU, 8 GB)". "Unknown" when the configuration could not be resolved.
   string runner = 4;
-  // Number of job attempts that finished in the period. Each retry counts as a separate attempt.
+  // Number of job attempts that finished in the period, started, and have recorded sandbox usage.
+  // Each recorded retry counts separately. Attempts without recorded usage are excluded, matching the Usage page.
   int32 attempt_count = 5;
   // Wall-clock minutes the job attempts ran, rounded to two decimal places.
   double minutes_elapsed = 6;
   // Billed vCPU-minutes, rounded to two decimal places.
   // Unlike GitHub Actions `minutesBilled`, which counts 2-vCPU-equivalent minutes, a 2 vCPU sandbox running for 10 minutes bills 20 vCPU-minutes.
   double vcpu_minutes_billed = 7;
-  // Number of finished job attempts with a failure outcome in this repository, workflow, and runner group.
-  // Each failed retry counts separately. Canceled and other non-failure outcomes are excluded.
+  // Number of attempts in `attemptCount` with a failure outcome in this repository, workflow, and runner group.
+  // Each recorded failed retry counts separately. Canceled and other non-failure outcomes are excluded.
   // Omitted by servers without error-rate support; zero means no failed attempts.
   optional int32 failed_attempt_count = 8;
-  // Fraction of finished job attempts that failed, from 0 to 1, without decimal rounding.
-  // Calculated as `failedAttemptCount` / `attemptCount`, including canceled and other non-failure outcomes in the denominator.
+  // Fraction of recorded usage attempts that failed, from 0 to 1, without decimal rounding.
+  // Calculated as `failedAttemptCount` / `attemptCount`. The denominator includes recorded canceled and other non-failure attempts.
+  // This is the Usage page's error rate, not the failure rate of all workflow attempts; attempts without recorded usage are excluded.
   // To combine runner groups for a workflow, divide the sum of `failedAttemptCount` by the sum of `attemptCount`.
   // Omitted by servers without error-rate support; zero means no failed attempts.
   optional double error_rate = 9;
