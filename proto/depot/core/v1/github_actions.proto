@@ -18,7 +18,7 @@ service GithubActionsService {
   // Terminate the compute resource for a queued or running GitHub Actions job.
   rpc TerminateGithubActionsJob(TerminateGithubActionsJobRequest) returns (TerminateGithubActionsJobResponse) {}
 
-  // Search GitHub Actions log lines, newest match first.
+  // Search GitHub Actions log lines in the requested order. Default: newest match first.
   rpc SearchGithubActionsLogs(SearchGithubActionsLogsRequest) returns (SearchGithubActionsLogsResponse) {}
 
   // Count GitHub Actions log lines matching a search.
