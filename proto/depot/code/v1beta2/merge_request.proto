@@ -9,11 +9,11 @@ import "google/protobuf/timestamp.proto";
 // PermissionDenied.
 service MergeRequestService {
   // Reads whether passing review agents can approve merge requests in this repository.
-  rpc GetRepositoryReviewSettings(GetRepositoryReviewSettingsRequest) returns (RepositoryReviewSettings) {}
+  rpc GetRepositoryReviewSettings(GetRepositoryReviewSettingsRequest) returns (GetRepositoryReviewSettingsResponse) {}
   // Changes whether passing review agents can approve. Requires organization owner access.
-  rpc UpdateRepositoryReviewSettings(UpdateRepositoryReviewSettingsRequest) returns (RepositoryReviewSettings) {}
+  rpc UpdateRepositoryReviewSettings(UpdateRepositoryReviewSettingsRequest) returns (UpdateRepositoryReviewSettingsResponse) {}
   // Opens a merge request against the required `baseRef`. Older servers return Unimplemented without creating a merge request.
-  rpc CreateMergeRequestWithBase(CreateMergeRequestRequest) returns (CreateMergeRequestResponse) {}
+  rpc CreateMergeRequestWithBase(CreateMergeRequestWithBaseRequest) returns (CreateMergeRequestWithBaseResponse) {}
   // Opens a merge request for a branch. Returns the existing open merge request when the branch already has one.
   rpc CreateMergeRequest(CreateMergeRequestRequest) returns (CreateMergeRequestResponse) {}
   // Reads a merge request by id or by its source branch, after catching its head up with the live branch.
@@ -120,6 +120,21 @@ message MergeRequestApproval {
   string reviewer_name = 6;
   // Passing review attempt. Empty for a human approval or unavailable review history.
   string review_attempt_id = 7;
+}
+
+message CreateMergeRequestWithBaseRequest {
+  string repository_id = 1;
+  // Source branch name without the "refs/heads/" prefix. Must exist and differ from the base branch.
+  string head_ref = 2;
+  // Required. Maximum: 1024 characters.
+  string title = 3;
+  string body = 4;
+  // Required existing destination branch without the "refs/heads/" prefix.
+  optional string base_ref = 5;
+}
+
+message CreateMergeRequestWithBaseResponse {
+  MergeRequest merge_request = 1;
 }
 
 message CreateMergeRequestRequest {
@@ -254,7 +269,12 @@ message UpdateRepositoryReviewSettingsRequest {
   bool agents_can_approve = 2;
 }
 
-message RepositoryReviewSettings {
+message GetRepositoryReviewSettingsResponse {
+  // Whether passing reviews can approve merge requests on their reviewed commit. Default: false.
+  bool agents_can_approve = 1;
+}
+
+message UpdateRepositoryReviewSettingsResponse {
   // Whether passing reviews can approve merge requests on their reviewed commit. Default: false.
   bool agents_can_approve = 1;
 }

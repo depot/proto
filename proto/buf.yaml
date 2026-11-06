@@ -6,11 +6,3 @@ breaking:
 lint:
   use:
     - DEFAULT
-  # Preserve the response types and shared create messages of the deployed service.
-  ignore_only:
-    RPC_REQUEST_RESPONSE_UNIQUE:
-      - depot/code/v1beta2/merge_request.proto
-    RPC_REQUEST_STANDARD_NAME:
-      - depot/code/v1beta2/merge_request.proto
-    RPC_RESPONSE_STANDARD_NAME:
-      - depot/code/v1beta2/merge_request.proto
