@@ -268,10 +268,10 @@ message SearchGithubActionsLogsRequest {
 message SearchGithubActionsLogsResponse {
   // Log lines matching the request, in the requested order.
   repeated GithubActionsLogLine lines = 1;
-  // Token to fetch the next page. Empty when there are no more matching lines.
+  // Token to fetch the next page of currently observed history. Empty does not establish that the producer has finished.
   optional string next_page_token = 2;
-  // Total matching lines as of `dataThrough`.
-  int64 total_size = 3;
+  // Total matching lines as of `dataThrough`. Unset for execution-scoped pages; use `CountGithubActionsLogs` independently.
+  optional int64 total_size = 3;
   // Latest time included in the response, in RFC 3339 format.
   google.protobuf.Timestamp data_through = 4;
 }
